@@ -3,8 +3,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import io from "socket.io-client";
-import type { Socket } from "socket.io-client";
+
 import {
   Card,
   CardHeader,
@@ -15,12 +14,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import {
-  HiPaperAirplane,
-  HiPaperClip,
-  HiArrowDown,
-} from "react-icons/hi";
+import { HiPaperAirplane, HiPaperClip, HiArrowDown } from "react-icons/hi";
 import { post } from "@/lib/api";
 
 type Message = {
@@ -50,9 +44,11 @@ export default function ChatWindow({
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const socketRef = useRef<Socket | null>(null);
 
-  // Fetch room info for partner name
+  // WebSocket ref
+  const wsRef = useRef<WebSocket | null>(null);
+
+  // 1) Fetch room info for partner name
   useEffect(() => {
     if (!influencerId) return;
     (async () => {
@@ -61,7 +57,9 @@ export default function ChatWindow({
           userId: influencerId,
         });
         const room = rooms.find((r) => r.roomId === roomId);
-        const other = room?.participants.find((p) => p.userId !== influencerId);
+        const other = room?.participants.find(
+          (p) => p.userId !== influencerId
+        );
         if (other) setPartnerName(other.name);
       } catch {
         setError("Unable to load conversation info.");
@@ -69,7 +67,7 @@ export default function ChatWindow({
     })();
   }, [roomId, influencerId]);
 
-  // Load last messages
+  // 2) Load last messages
   useEffect(() => {
     (async () => {
       try {
@@ -86,31 +84,70 @@ export default function ChatWindow({
     })();
   }, [roomId]);
 
-  // Real-time socket
+  // 3) Open WebSocket
   useEffect(() => {
-    const socket = io(process.env.NEXT_PUBLIC_API_URL!);
-    socketRef.current = socket;
-    socket.emit("joinChat", { roomId });
-    socket.on("chatMessage", ({ message }: { message: Message }) => {
-      setMessages((prev) => [...prev, message]);
-      scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-    });
+    const socketUrl = `${process.env.NEXT_PUBLIC_WS_URL}?roomId=${encodeURIComponent(
+      roomId
+    )}`;
+    const ws = new WebSocket(socketUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      // Notify server we’ve joined
+      const joinMsg = { type: "joinChat", payload: { roomId } };
+      ws.send(JSON.stringify(joinMsg));
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const { type, payload } = JSON.parse(event.data);
+        if (type === "chatMessage") {
+          setMessages((prev) => [...prev, payload.message as Message]);
+          scrollRef.current?.scrollTo({
+            top: scrollRef.current.scrollHeight,
+            behavior: "smooth",
+          });
+        }
+      } catch {
+        console.error("Invalid WS message", event.data);
+      }
+    };
+
+    ws.onerror = (ev) => {
+      setError("WebSocket error");
+      console.error("WebSocket error:", ev);
+    };
+
+    ws.onclose = () => {
+      // Optionally try to reconnect…
+    };
+
     return () => {
-      socket.disconnect();
+      ws.close();
     };
   }, [roomId]);
 
   const sendMessage = () => {
     if (!input.trim() || !influencerId) return;
+
     const msg: Message = {
       senderId: influencerId,
       text: input.trim(),
       timestamp: new Date().toISOString(),
     };
-    socketRef.current?.emit("sendChatMessage", { roomId, ...msg });
+
+    const outgoing = {
+      type: "sendChatMessage",
+      payload: { roomId, ...msg },
+    };
+    wsRef.current?.send(JSON.stringify(outgoing));
+
     setMessages((prev) => [...prev, msg]);
     setInput("");
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+    scrollRef.current?.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      behavior: "smooth",
+    });
   };
 
   return (
@@ -126,11 +163,6 @@ export default function ChatWindow({
           </Avatar>
           <h3 className="text-lg font-semibold">{partnerName}</h3>
         </div>
-        <div className="flex space-x-2">
-          {/* Add action icons if desired */}
-          {/* <Button variant="ghost"><HiUsers /></Button> */}
-          {/* <Button variant="ghost"><HiDotsVertical /></Button> */}
-        </div>
       </CardHeader>
 
       {/* Messages */}
@@ -141,7 +173,7 @@ export default function ChatWindow({
           </div>
         ) : (
           <ScrollArea ref={scrollRef} className="h-full px-4 py-2 space-y-4">
-            {messages.map((msg, idx) => {
+            {messages.map((msg, i) => {
               const isMe = msg.senderId === influencerId;
               const time = new Date(msg.timestamp).toLocaleTimeString([], {
                 hour: "2-digit",
@@ -149,7 +181,7 @@ export default function ChatWindow({
               });
               return (
                 <div
-                  key={idx}
+                  key={i}
                   className={`flex ${isMe ? "justify-end" : "justify-start"}`}
                 >
                   {!isMe && (
@@ -160,14 +192,18 @@ export default function ChatWindow({
                   <div className="max-w-[70%]">
                     <CardContent
                       className={`p-2 rounded-lg ${
-                        isMe ? "bg-blue-600 text-white rounded-br-none" : "bg-gray-200 rounded-bl-none"
+                        isMe
+                          ? "bg-blue-600 text-white rounded-br-none"
+                          : "bg-gray-200 rounded-bl-none"
                       }`}
                     >
                       <p className="whitespace-pre-wrap">{msg.text}</p>
                     </CardContent>
                     <p
                       className={`text-xs mt-1 ${
-                        isMe ? "text-right text-white/70" : "text-left text-gray-500"
+                        isMe
+                          ? "text-right text-white/70"
+                          : "text-left text-gray-500"
                       }`}
                     >
                       {time}
@@ -183,13 +219,15 @@ export default function ChatWindow({
             })}
           </ScrollArea>
         )}
-        {/* Scroll-to-bottom */}
         <Button
           variant="ghost"
           size="icon"
           className="absolute bottom-4 right-4 bg-white rounded-full shadow-md"
           onClick={() =>
-            scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
+            scrollRef.current?.scrollTo({
+              top: scrollRef.current.scrollHeight,
+              behavior: "smooth",
+            })
           }
         >
           <HiArrowDown className="h-5 w-5" />
@@ -209,11 +247,7 @@ export default function ChatWindow({
             onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             className="flex-1"
           />
-          <Button
-            size="icon"
-            disabled={!input.trim()}
-            onClick={sendMessage}
-          >
+          <Button size="icon" disabled={!input.trim()} onClick={sendMessage}>
             <HiPaperAirplane className="h-5 w-5 rotate-90" />
           </Button>
         </div>

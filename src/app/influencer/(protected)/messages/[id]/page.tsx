@@ -2,10 +2,11 @@
 import ChatWindow from "../components/chatWindow";
 
 interface PageProps {
-  params: { id: string };
+  /** Next.js 15+ now passes params as a Promise */
+  params: Promise<{ id: string }>;
 }
 
-export default function MessagePage({ params }: PageProps) {
-  // params.id is your roomId
-  return <ChatWindow params={{ roomId: params.id }} />;
+export default async function MessagePage({ params }: PageProps) {
+  const { id } = await params;
+  return <ChatWindow params={{ roomId: id }} />;
 }

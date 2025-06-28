@@ -1,9 +1,9 @@
+// File: app/brand/(protected)/messages/components/ChatWindow.tsx
 "use client";
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import io from "socket.io-client";
-import type { Socket } from "socket.io-client";
+
 import {
   Card,
   CardHeader,
@@ -37,24 +37,30 @@ type RoomSummary = {
 
 const CHAR_LIMIT = 200;
 
-export default function ChatWindow({ params }: { params: { roomId: string } }) {
+export default function ChatWindow({
+  params,
+}: {
+  params: { roomId: string };
+}) {
   const { roomId } = params;
   const router = useRouter();
   const influencerId =
-    typeof window !== "undefined" ? localStorage.getItem("influencerId") : null;
+    typeof window !== "undefined"
+      ? localStorage.getItem("influencerId")
+      : null;
 
   const [partnerName, setPartnerName] = useState("Chat");
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState("");
-  const [replyTo, setReplyTo] = useState<{ text: string; idx: number } | null>(null);
+  const [replyTo, setReplyTo] = useState<{ text: string; idx: number } | null>(
+    null
+  );
   const [error, setError] = useState<string | null>(null);
-
-  // track which messages are expanded
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const socketRef = useRef<Socket | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
 
   // Fetch partner name
   useEffect(() => {
@@ -65,7 +71,9 @@ export default function ChatWindow({ params }: { params: { roomId: string } }) {
           userId: influencerId,
         });
         const room = rooms.find((r) => r.roomId === roomId);
-        const other = room?.participants.find((p) => p.userId !== influencerId);
+        const other = room?.participants.find(
+          (p) => p.userId !== influencerId
+        );
         if (other) setPartnerName(other.name);
       } catch {
         setError("Unable to load conversation info.");
@@ -73,7 +81,7 @@ export default function ChatWindow({ params }: { params: { roomId: string } }) {
     })();
   }, [roomId, influencerId]);
 
-  // Load messages
+  // Load history
   useEffect(() => {
     (async () => {
       try {
@@ -90,24 +98,42 @@ export default function ChatWindow({ params }: { params: { roomId: string } }) {
     })();
   }, [roomId]);
 
-  // Socket.io
+  // WebSocket setup
   useEffect(() => {
-    const socket = io(process.env.NEXT_PUBLIC_API_URL!);
-    socketRef.current = socket;
-    socket.emit("joinChat", { roomId });
-    socket.on("chatMessage", ({ message }: { message: Message }) => {
-      setMessages((prev) => [...prev, message]);
-      scrollRef.current?.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: "smooth",
-      });
-    });
+    const url = `${process.env.NEXT_PUBLIC_WS_URL}?roomId=${encodeURIComponent(
+      roomId
+    )}`;
+    const ws = new WebSocket(url);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ type: "joinChat", payload: { roomId } }));
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const { type, payload } = JSON.parse(event.data);
+        if (type === "chatMessage") {
+          setMessages((prev) => [...prev, payload.message as Message]);
+          scrollRef.current?.scrollTo({
+            top: scrollRef.current.scrollHeight,
+            behavior: "smooth",
+          });
+        }
+      } catch {
+        console.error("Invalid WS message", event.data);
+      }
+    };
+
+    ws.onerror = () => {
+      setError("WebSocket error");
+    };
+
     return () => {
-      socket.disconnect();
+      ws.close();
     };
   }, [roomId]);
 
-  // Send message
   const sendMessage = () => {
     if (!input.trim() || !influencerId) return;
     const msg: Message = {
@@ -116,7 +142,11 @@ export default function ChatWindow({ params }: { params: { roomId: string } }) {
       timestamp: new Date().toISOString(),
       replyTo: replyTo || undefined,
     };
-    socketRef.current?.emit("sendChatMessage", { roomId, ...msg });
+    const outbound = {
+      type: "sendChatMessage",
+      payload: { roomId, ...msg },
+    };
+    wsRef.current?.send(JSON.stringify(outbound));
     setMessages((prev) => [...prev, msg]);
     setInput("");
     setReplyTo(null);
@@ -126,7 +156,6 @@ export default function ChatWindow({ params }: { params: { roomId: string } }) {
     });
   };
 
-  // Toggle expansion of a message
   const toggleExpand = (idx: number) => {
     setExpanded((e) => ({ ...e, [idx]: !e[idx] }));
   };
@@ -142,7 +171,9 @@ export default function ChatWindow({ params }: { params: { roomId: string } }) {
           <Avatar className="h-10 w-10">
             <AvatarFallback>{partnerName.charAt(0)}</AvatarFallback>
           </Avatar>
-          <h3 className="text-xl font-semibold text-gray-800">{partnerName}</h3>
+          <h3 className="text-xl font-semibold text-gray-800">
+            {partnerName}
+          </h3>
         </div>
       </CardHeader>
 
@@ -164,22 +195,24 @@ export default function ChatWindow({ params }: { params: { roomId: string } }) {
                 minute: "2-digit",
               });
 
-              // Determine whether to truncate
               const isExpanded = expanded[idx];
               const tooLong = msg.text.length > CHAR_LIMIT;
-              const displayText =
-                !tooLong || isExpanded
-                  ? msg.text
-                  : msg.text.slice(0, CHAR_LIMIT) + "...";
+              const displayText = !tooLong || isExpanded
+                ? msg.text
+                : msg.text.slice(0, CHAR_LIMIT) + "...";
 
               return (
                 <div
                   key={idx}
-                  className={`group flex ${isMe ? "justify-end" : "justify-start"}`}
+                  className={`group flex ${
+                    isMe ? "justify-end" : "justify-start"
+                  }`}
                 >
                   {!isMe && (
                     <Avatar className="h-8 w-8 mr-2">
-                      <AvatarFallback>{partnerName.charAt(0)}</AvatarFallback>
+                      <AvatarFallback>
+                        {partnerName.charAt(0)}
+                      </AvatarFallback>
                     </Avatar>
                   )}
 
@@ -212,7 +245,9 @@ export default function ChatWindow({ params }: { params: { roomId: string } }) {
 
                     <p
                       className={`text-xs mt-1 ${
-                        isMe ? "text-right text-white/70" : "text-left text-gray-500"
+                        isMe
+                          ? "text-right text-white/70"
+                          : "text-left text-gray-500"
                       }`}
                     >
                       {time}
@@ -229,7 +264,7 @@ export default function ChatWindow({ params }: { params: { roomId: string } }) {
 
                   {isMe && (
                     <Avatar className="h-8 w-8 ml-2">
-                      <AvatarFallback>{/* initial */}</AvatarFallback>
+                      <AvatarFallback>{/* you */}</AvatarFallback>
                     </Avatar>
                   )}
                 </div>
