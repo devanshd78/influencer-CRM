@@ -39,6 +39,11 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* ── Portal (primary accent) overrides ──────────────────────────────────── */
+  --portal: #ef2f5b;
+  --portal-dark: #c21f4f;
+  --portal-foreground: #ffffff;
 }
 
 :root {
@@ -74,6 +79,15 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* ── Portal (primary accent) overrides ──────────────────────────────────── */
+  --portal: #ef2f5b;
+  --portal-dark: #c21f4f;
+  --portal-foreground: #ffffff;
 }
 
 .dark {
@@ -115,6 +129,7 @@
     border-color: var(--border);
     outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
   }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);

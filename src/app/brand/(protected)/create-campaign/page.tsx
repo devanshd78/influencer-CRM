@@ -150,7 +150,7 @@ export default function CreateCampaignPage() {
       router.push("/brand/active-campaign");
       resetForm();
     } catch (err: any) {
-      Swal.fire({ icon: "error", title: "Error", text: err.message || "Try again." });
+      Swal.fire({ icon: "error", title: "Error", text: err.response.data.message || "Try again." });
     } finally {
       setIsSubmitting(false);
     }

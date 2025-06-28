@@ -1,7 +1,6 @@
-// components/BrandTopbar.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   HiSearch,
   HiUserCircle,
@@ -18,8 +17,26 @@ export default function BrandTopbar({
 }) {
   const [brandName, setBrandName] = useState<string>("");
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [email, setEmail] = useState<string>("");
+  const [subscriptionName, setSubscriptionName] = useState<string>("");
+  const [subscriptionExpiresAt, setSubscriptionExpiresAt] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState<boolean>(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     const brandId =
@@ -35,15 +52,23 @@ export default function BrandTopbar({
 
     (async () => {
       try {
-        // Your GET returns: { name, email, phone, ..., walletBalance }
+        // API returns full brand object including subscription details
         const data = await get<{
           name: string;
+          email: string;
           walletBalance: number;
-          // you can type other fields if you want
+          subscription: {
+            planName: string;
+            expiresAt: string;
+            features: { key: string; limit: number; used: number }[];
+          };
         }>(`/brand?id=${brandId}`);
 
         setBrandName(data.name);
+        setEmail(data.email);
         setWalletBalance(data.walletBalance);
+        setSubscriptionName(data.subscription.planName);
+        setSubscriptionExpiresAt(data.subscription.expiresAt);
       } catch (err: any) {
         console.error(err);
         setError(
@@ -55,6 +80,10 @@ export default function BrandTopbar({
       }
     })();
   }, []);
+
+  const formattedExpiry = subscriptionExpiresAt
+    ? new Date(subscriptionExpiresAt).toLocaleDateString()
+    : "";
 
   return (
     <header className="w-full bg-white shadow-sm">
@@ -85,17 +114,6 @@ export default function BrandTopbar({
 
           {/* Right: Brand, Wallet & Profile */}
           <div className="flex items-center space-x-6">
-            {/* Brand Name */}
-            {loading ? (
-              <span className="text-gray-500 text-sm">Loading…</span>
-            ) : error ? (
-              <span className="text-red-500 text-sm">{error}</span>
-            ) : (
-              <span className="text-gray-800 font-medium text-sm">
-                {brandName}
-              </span>
-            )}
-
             {/* Wallet */}
             {!loading && !error && (
               <button
@@ -107,14 +125,27 @@ export default function BrandTopbar({
                   size={20}
                 />
                 <span className="font-medium text-gray-800">
-                  $ {walletBalance?.toFixed(2)}
+                  ${walletBalance?.toFixed(2)}
                 </span>
               </button>
             )}
 
+            {loading ? (
+              <span className="text-gray-500 text-sm">Loading…</span>
+            ) : error ? (
+              <span className="text-red-500 text-sm">{error}</span>
+            ) : (
+              <span className="text-gray-800 font-medium text-sm">
+                {brandName}
+              </span>
+            )}
+
             {/* Profile Menu */}
-            <div className="relative">
-              <button className="flex items-center space-x-1 focus:outline-none">
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen((o) => !o)}
+                className="flex items-center space-x-1 focus:outline-none cursor-pointer p-2 rounded-md hover:bg-gray-100"
+              >
                 <HiUserCircle
                   className="text-gray-600"
                   size={24}
@@ -124,7 +155,38 @@ export default function BrandTopbar({
                   size={16}
                 />
               </button>
-              {/* Optional dropdown here */}
+
+              {menuOpen && !loading && !error && (
+                <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <p className="text-sm font-semibold text-gray-700">
+                      {brandName}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {email}
+                    </p>
+                  </div>
+                  <ul className="py-1">
+                    <li className="px-4 py-2 hover:bg-gray-100 text-sm text-gray-700">
+                      Plan: {subscriptionName.charAt(0).toUpperCase() + subscriptionName.slice(1)}
+                    </li>
+                    <li className="px-4 py-2 hover:bg-gray-100 text-sm text-gray-700">
+                      Expires: {formattedExpiry}
+                    </li>
+                    <li className="px-4 py-2 hover:bg-gray-100 text-sm text-gray-700">
+                      <a href="/brand/profile">View Profile</a>
+                    </li>
+                    <li className="px-4 py-2 hover:bg-gray-100 text-sm text-gray-700">
+                      <a href="/brand/billing">Billing &amp; Payment</a>
+                    </li>
+                    <li className="px-4 py-2 hover:bg-gray-100 text-sm text-red-600">
+                      <button onClick={() => {/* implement logout */}}>
+                        Sign Out
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
         </div>
