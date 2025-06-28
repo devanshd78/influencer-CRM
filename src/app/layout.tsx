@@ -1,11 +1,10 @@
-
 import { Metadata } from "next";
 import "./globals.css";
 import { Lexend } from "next/font/google";
 
 export const metadata: Metadata = {
-  title: "ShareMitra",
-  description: "ShareMitra is a platform for sharing and discovering content."
+  title: "Collabglam",
+  description: "A platform for seamless collaborations between brands and influencers."
 };
 
 const lexend = Lexend({
@@ -16,7 +15,9 @@ const lexend = Lexend({
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${lexend.className} antialiased`}>{children}</body>
+      <body className={`${lexend.className} antialiased`}>
+        {children}
+      </body>
     </html>
   );
 }
