@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Check, X } from 'lucide-react';
 import { plans } from '../data/Plan';
+import { useRouter } from 'next/navigation';
 
 // Human-friendly labels for each feature key
 const FEATURE_LABELS: Record<string, string> = {
@@ -36,6 +37,9 @@ const formatFeatureValue = (key: string, v: number): string => {
 };
 
 const Pricing: React.FC = () => {
+
+  const router = useRouter();
+
   const roles = ['Brand', 'Influencer'] as const;
   const [activeRole, setActiveRole] = useState<typeof roles[number]>(roles[0]);
 
@@ -131,9 +135,9 @@ const Pricing: React.FC = () => {
                 {/* Push button to bottom */}
                 <div className="mt-auto">
                   <button
-                    className="w-full py-4 px-6 bg-[#ef2f5b] text-white font-bold text-lg rounded-lg hover:bg-[#c21f4f] transition-all hover:scale-105"
+                    className="w-full py-4 px-6 bg-[#ef2f5b] text-white font-bold text-lg rounded-lg hover:bg-[#c21f4f] transition-all hover:scale-105 cursor-pointer"
                     onClick={() =>
-                      alert(`Selected ${plan.role} – ${plan.name}`)
+                      router.push('/login')
                     }
                   >
                     {plan.price === 0 ? 'Start Free' : 'Choose Plan'}

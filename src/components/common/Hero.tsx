@@ -1,7 +1,10 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const Hero = () => {
+  const router = useRouter();
+
   return (
     <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gray-50 font-lexend">
       {/* Background Elements */}
@@ -43,7 +46,7 @@ const Hero = () => {
               through strategic content distribution.
             </p>
 
-            <button className="group inline-flex items-center px-8 py-4 bg-[#ef2f5b] text-white font-semibold rounded-lg text-lg hover:bg-portal-dark transition-all transform hover:scale-105 shadow-lg">
+            <button className="group inline-flex items-center px-8 py-4 bg-[#ef2f5b] text-white font-semibold rounded-lg text-lg hover:bg-portal-dark transition-all transform hover:scale-105 shadow-lg cursor-pointer" onClick={() => router.push('/login')}>
               START YOUR PROJECT
               <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </button>
