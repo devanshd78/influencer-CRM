@@ -17,7 +17,6 @@ interface InfluencerTopbarProps {
 export default function InfluencerTopbar({ onSidebarOpen }: InfluencerTopbarProps) {
   const [influencerName, setInfluencerName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
-  const [earnings, setEarnings] = useState<number | null>(null);
   const [subscriptionName, setSubscriptionName] = useState<string>("");
   const [subscriptionExpiresAt, setSubscriptionExpiresAt] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
@@ -38,13 +37,7 @@ export default function InfluencerTopbar({ onSidebarOpen }: InfluencerTopbarProp
     };
   }, []);
 
-  useEffect(() => {          
-
-
-
-
-
-    
+  useEffect(() => {
     const influencerId =
       typeof window !== "undefined"
         ? localStorage.getItem("influencerId")
@@ -71,7 +64,6 @@ export default function InfluencerTopbar({ onSidebarOpen }: InfluencerTopbarProp
 
         setInfluencerName(data.name);
         setEmail(data.email);
-        setEarnings(data.earnings);
         setSubscriptionName(data.subscription.planName);
         setSubscriptionExpiresAt(data.subscription.expiresAt);
       } catch (err: any) {
@@ -116,18 +108,6 @@ export default function InfluencerTopbar({ onSidebarOpen }: InfluencerTopbarProp
 
           {/* Right: Earnings, Name & Profile */}
           <div className="flex items-center space-x-6">
-            {/* Earnings */}
-            {!loading && !error && earnings !== null && (
-              <button
-                className="flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-md text-sm focus:outline-none"
-                title="View earnings"
-              >
-                <HiCreditCard className="text-gray-600" size={20} />
-                <span className="font-medium text-gray-800">
-                  ${earnings.toFixed(2)}
-                </span>
-              </button>
-            )}
 
             {loading ? (
               <span className="text-gray-500 text-sm">Loading…</span>
@@ -166,6 +146,9 @@ export default function InfluencerTopbar({ onSidebarOpen }: InfluencerTopbarProp
                     </li>
                     <li className="px-4 py-2 hover:bg-gray-100 text-sm text-gray-700">
                       <a href="/influencer/profile">View Profile</a>
+                    </li>
+                    <li className="px-4 py-2 hover:bg-gray-100 text-sm text-gray-700">
+                      <a href="/influencer/subscription">Upgrade Subscription</a>
                     </li>
                     <li className="px-4 py-2 hover:bg-gray-100 text-sm text-red-600">
                       <button onClick={() => { /* implement logout */ }}>

@@ -18,7 +18,6 @@ const navItems = [
   { label: "Brands",             href: "/admin/brands",        icon: Home     },
   { label: "Influencers",        href: "/admin/influencers",   icon: Users    },
   { label: "All Campaigns",      href: "/admin/campaigns",     icon: List     },
-  { label: "Active Campaigns",   href: "/admin/campaigns/active", icon: Bookmark },
 ];
 
 export default function AdminSidebar() {
