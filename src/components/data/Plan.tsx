@@ -1,4 +1,14 @@
 // Centralised plan catalogue – update only here.
+
+export interface Plan {
+  role: string;
+  name: string;
+  price: number;
+  autoRenew?: boolean;
+  durationMins?: number;
+  features: Record<string, number>;
+}
+
 export const plans = [
   // ── BRAND ────────────────────────────────────────────────
   {

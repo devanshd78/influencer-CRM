@@ -1,20 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
+import { NextPage } from "next";
 import Link from "next/link";
-import { get, post } from "@/lib/api";
-import {
-  HiOutlineRefresh,
-  HiCheckCircle,
-  HiXCircle,
-  HiOutlineEye,
-  HiChevronLeft,
-  HiChevronRight,
-} from "react-icons/hi";
+import { post } from "@/lib/api";
+import { HiOutlineRefresh, HiOutlineEye, HiChevronUp, HiChevronDown, HiChevronLeft, HiChevronRight } from "react-icons/hi";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -25,47 +18,66 @@ import {
 } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
 
-interface SubscriptionFeature {
-  key: string;
-  limit: number;
-  used: number;
+// Domain types
+interface Subscription {
+  planName: string;
+  expiresAt: string;
 }
 
-interface Brand {
+export interface Brand {
   brandId: string;
   name: string;
   email: string;
-  phone: string;
-  county: string;
-  callingcode: string;
-  subscription: {
-    planName: string;
-    expiresAt: string;
-    features: SubscriptionFeature[];
-  };
+  callingcode?: string;
+  phone?: string;
   subscriptionExpired: boolean;
-  createdAt: string;
+  subscription: Subscription;
 }
 
-export default function AdminBrandsPage() {
-  const [brands, setBrands] = useState<Brand[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [showActiveOnly, setShowActiveOnly] = useState(false);
-  const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+interface GetListResponse {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  brands: Brand[];
+}
 
-  useEffect(() => {
-    fetchBrands();
-  }, []);
+const SORTABLE_FIELDS: Record<string, string> = {
+  name: "Name",
+  email: "Email",
+  phone: "Phone",
+  planName: "Plan",
+  expiresAt: "Expires",
+  subscriptionExpired: "Status",
+};
+
+const AdminBrandsPage: NextPage = () => {
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [total, setTotal] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [page, setPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [limit] = useState<number>(10);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [search, setSearch] = useState<string>("");
+  const [sortBy, setSortBy] = useState<string>("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   const fetchBrands = async () => {
     setLoading(true);
-    setError(null);
     try {
-      const data = await post<{ brands: Brand[] }>("/brand/getall");
-      setBrands(Array.isArray(data.brands) ? data.brands : []);
+      const params = { page, limit: pageSize, search, sortBy, sortOrder };
+      const response = await post<GetListResponse>("/admin/brand/getlist", params);
+      setBrands(response.brands);
+      setTotal(response.total);
+      setPage(response.page);
+      setPageSize(response.limit);
+      setTotalPages(response.totalPages)
+      setError(null);
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Failed to load brands.");
@@ -74,152 +86,143 @@ export default function AdminBrandsPage() {
     }
   };
 
-  const filtered = useMemo(() => {
-    return brands
-      .filter(b => (showActiveOnly ? !b.subscriptionExpired : true))
-      .filter(b =>
-        b.name.toLowerCase().includes(search.toLowerCase()) ||
-        b.email.toLowerCase().includes(search.toLowerCase()) ||
-        b.subscription.planName.toLowerCase().includes(search.toLowerCase())
-      );
-  }, [brands, showActiveOnly, search]);
+  useEffect(() => {
+    fetchBrands();
+  }, [page, pageSize, search, sortBy, sortOrder]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
-  const paginated = filtered.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+  const toggleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(prev => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(field);
+      setSortOrder("asc");
+    }
+    setPage(1);
+  };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <h1 className="text-3xl font-semibold">All Brands (Admin)</h1>
-        <div className="flex items-center space-x-2">
+    <div className="p-6 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <h1 className="text-3xl font-bold">Brands Administration</h1>
+        <div className="flex items-center gap-2">
           <Input
-            placeholder="Search brands..."
+            placeholder="Search by name, email, plan..."
             value={search}
-            onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
-            className="max-w-sm"
+            onChange={e => { setSearch(e.target.value); setPage(1); }}
+            className="w-full sm:w-64"
           />
-          <Button onClick={fetchBrands} variant="default" size="sm">
-            <HiOutlineRefresh className="mr-2 h-4 w-4" /> Reload
+          <Button variant="outline" onClick={fetchBrands} disabled={loading}>
+            <HiOutlineRefresh className={loading ? "animate-spin" : ""} />
+            Refresh
           </Button>
         </div>
       </div>
 
-      <div className="flex items-center space-x-2 mb-4">
-        <Checkbox
-          id="active-only"
-          checked={showActiveOnly}
-          onCheckedChange={checked => { setShowActiveOnly(!!checked); setCurrentPage(1); }}
-        />
-        <label htmlFor="active-only" className="text-gray-700">
-          Show Non-Expired Only
-        </label>
-      </div>
+      {error && <Card className="text-red-600 p-4">{error}</Card>}
 
-      {loading ? (
-        <Card className="text-center py-20 text-gray-500">
-          Loading brands…
-        </Card>
-      ) : error ? (
-        <Card className="text-center py-20 text-red-600">
-          {error}
-        </Card>
-      ) : paginated.length === 0 ? (
-        <Card className="text-center py-20 text-gray-600">
-          No brands {showActiveOnly ? 'non-expired' : 'found'}.
-        </Card>
-      ) : (
-        <Card>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Plan</TableHead>
-                <TableHead>Expires</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginated.map(b => (
-                <TableRow key={b.brandId}>
-                  <TableCell>{b.brandId}</TableCell>
-                  <TableCell>{b.name}</TableCell>
-                  <TableCell>{b.email}</TableCell>
-                  <TableCell>{`${b.callingcode}${b.phone}`}</TableCell>
-                  <TableCell>{b.county}</TableCell>
-                  <TableCell>{b.subscription.planName}</TableCell>
-                  <TableCell>{formatDate(b.subscription.expiresAt)}</TableCell>
-                  <TableCell>{formatDate(b.createdAt)}</TableCell>
-                  <TableCell>
-                    {b.subscriptionExpired ? (
-                      <span className="inline-flex items-center space-x-1 text-red-600">
-                        <HiXCircle /> <span>Expired</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center space-x-1 text-green-600">
-                        <HiCheckCircle /> <span>Active</span>
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Link
-                          href={`/admin/brands/view?brandId=${b.brandId}`}
-                          className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"
-                        >
-                          <HiOutlineEye size={18} />
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent>View Brand</TooltipContent>
-                    </Tooltip>
+      <Card className="overflow-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead onClick={() => toggleSort("name")} className="cursor-pointer">
+                <div className="flex items-center">
+                  Name{sortBy === "name" && (sortOrder === "asc" ? <HiChevronUp /> : <HiChevronDown />)}
+                </div>
+              </TableHead>
+              <TableHead onClick={() => toggleSort("email")} className="cursor-pointer">
+                <div className="flex items-center">
+                  Email{sortBy === "email" && (sortOrder === "asc" ? <HiChevronUp /> : <HiChevronDown />)}
+                </div>
+              </TableHead>
+              <TableHead onClick={() => toggleSort("phone")} className="cursor-pointer">
+                <div className="flex items-center">
+                  Phone{sortBy === "phone" && (sortOrder === "asc" ? <HiChevronUp /> : <HiChevronDown />)}
+                </div>
+              </TableHead>
+              <TableHead onClick={() => toggleSort("planName")} className="cursor-pointer">
+                <div className="flex items-center">
+                  Plan{sortBy === "planName" && (sortOrder === "asc" ? <HiChevronUp /> : <HiChevronDown />)}
+                </div>
+              </TableHead>
+              <TableHead onClick={() => toggleSort("expiresAt")} className="cursor-pointer">
+                <div className="flex items-center">
+                  Expires{sortBy === "expiresAt" && (sortOrder === "asc" ? <HiChevronUp /> : <HiChevronDown />)}
+                </div>
+              </TableHead>
+              <TableHead onClick={() => toggleSort("subscriptionExpired")} className="cursor-pointer">
+                <div className="flex items-center">
+                  Status{sortBy === "subscriptionExpired" && (sortOrder === "asc" ? <HiChevronUp /> : <HiChevronDown />)}
+                </div>
+              </TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading
+              ? Array.from({ length: pageSize }).map((_, i) => (
+                <TableRow key={i}>
+                  {Array(7).fill(0).map((_, j) => (
+                    <TableCell key={j}>
+                      <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+              : brands.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-gray-500 py-8">
+                    No brands match the criteria.
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
-      )}
+              ) : (
+                brands.map(b => (
+                  <TableRow key={b.brandId}>
+                    <TableCell>{b.name}</TableCell>
+                    <TableCell>{b.email}</TableCell>
+                    <TableCell>{b.callingcode ? `${b.callingcode} ${b.phone}` : b.phone}</TableCell>
+                    <TableCell>{b.subscription.planName}</TableCell>
+                    <TableCell>{new Date(b.subscription.expiresAt).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <span className={b.subscriptionExpired ? "text-red-600" : "text-green-600"}>
+                        {b.subscriptionExpired ? "Expired" : "Active"}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Link href={`/admin/brands/view?brandId=${b.brandId}`}>
+                            <Button variant="ghost" size="icon">
+                              <HiOutlineEye />
+                            </Button>
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent>View details</TooltipContent>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+          </TableBody>
+        </Table>
+      </Card>
 
-      {/* Pagination */}
-      {!loading && !error && paginated.length > 0 && (
-        <div className="flex justify-end items-center p-4 space-x-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-            disabled={currentPage === 1}
-          >
-            <HiChevronLeft />
-          </Button>
-          <span className="text-gray-700">
-            Page {currentPage} of {Math.ceil(filtered.length / itemsPerPage)}
-          </span>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setCurrentPage(p => Math.min(p + 1, Math.ceil(filtered.length / itemsPerPage)))}
-            disabled={currentPage === Math.ceil(filtered.length / itemsPerPage)}
-          >
-            <HiChevronRight />
-          </Button>
+      {!loading && !error && brands.length > 0 && (
+        <div className="flex justify-between items-center p-4">
+          <div className="text-sm text-gray-700">
+            Showing {(page - 1) * limit + 1}–{Math.min(page * limit, total)} of {total}
+          </div>
+          <div className="space-x-2">
+            <Button variant="outline" size="icon" disabled={page === 1} onClick={() => setPage(p => Math.max(p - 1, 1))}>
+              <HiChevronLeft />
+            </Button>
+            <Button variant="outline" size="icon" disabled={page === totalPages} onClick={() => setPage(p => Math.min(p + 1, totalPages))}>
+              <HiChevronRight />
+            </Button>
+          </div>
         </div>
       )}
     </div>
   );
-}
+};
+
+export default AdminBrandsPage;

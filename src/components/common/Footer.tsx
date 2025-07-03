@@ -66,15 +66,19 @@ const Footer = () => {
             {/* Brand Section */}
             <div className="lg:col-span-2">
               <div className="flex items-center space-x-2 mb-6">
-                <div className="p-2 bg-[#ef2f5b] rounded-lg">
-                  <Share2 className="h-6 w-6 text-white" />
-                </div>
+                <img
+                  src="./logo.png"
+                  alt="Collabglam Logo"
+                  width={50}
+                  height={50}
+                  className="rounded-lg"
+                />
                 <span className="text-xl font-bold">Collabglam</span>
               </div>
-              
+
               <p className="text-gray-300 mb-6 leading-relaxed">
-                Empowering content creators worldwide to monetize their passion 
-                and build sustainable businesses through intelligent sharing and 
+                Empowering content creators worldwide to monetize their passion
+                and build sustainable businesses through intelligent sharing and
                 distribution.
               </p>
 
@@ -139,7 +143,7 @@ const Footer = () => {
                 Get the latest updates, tips, and exclusive offers delivered to your inbox.
               </p>
             </div>
-            
+
             <div className="flex w-full lg:w-auto">
               <input
                 type="email"
@@ -159,7 +163,7 @@ const Footer = () => {
             <div className="text-gray-400 text-sm">
               © 2024 Collabglam. All rights reserved.
             </div>
-            
+
             <div className="flex items-center space-x-6 text-sm text-gray-400">
               <span>Made with ❤️ for creators worldwide</span>
               <div className="flex items-center space-x-4">

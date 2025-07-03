@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { get } from "@/lib/api";
+import { post } from "@/lib/api";
 import {
   HiOutlineRefresh,
   HiCheckCircle,
@@ -10,11 +10,20 @@ import {
   HiOutlineEye,
   HiChevronLeft,
   HiChevronRight,
+  HiChevronUp,
+  HiChevronDown,
+  HiUserGroup,
 } from "react-icons/hi";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -27,166 +36,217 @@ import { Card } from "@/components/ui/card";
 
 interface Campaign {
   campaignsId: string;
-  brandName?: string;
   productOrServiceName: string;
   description: string;
   timeline: { startDate: string; endDate: string };
   budget: number;
   isActive: number;
-  interestName?: string;
   goal?: string;
   applicantCount?: number;
 }
 
+// Updated to match API: 'campaigns' field
+interface ListResponse {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  status: number;
+  campaigns: Campaign[];
+}
+
+type StatusFilter = 0 | 1 | 2; // 0: All, 1: Active, 2: Inactive
+
+type SortKey = keyof Campaign | "startDate" | "endDate" | "status";
+
 export default function AdminCampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [showActiveOnly, setShowActiveOnly] = useState(false);
-  const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
 
-  useEffect(() => {
-    fetchAll();
-  }, []);
+  const [search, setSearch] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(0);
+  const statusOptions = [
+    { label: "All", value: 0 },
+    { label: "Active", value: 1 },
+    { label: "Inactive", value: 2 },
+  ];
 
-  const fetchAll = async () => {
+  const [page, setPage] = useState<number>(1);
+  const [limit] = useState<number>(10);
+  const [sortKey, setSortKey] = useState<SortKey>("productOrServiceName");
+  const [sortAsc, setSortAsc] = useState<boolean>(true);
+
+  // Fetch data from backend
+  const fetchCampaigns = async () => {
     setLoading(true);
-    setError(null);
     try {
-      const data = await get<Campaign[]>("/campaign/getall");
-      setCampaigns(Array.isArray(data) ? data : []);
+      const payload = {
+        page,
+        limit,
+        search,
+        sortBy: sortKey,
+        sortOrder: sortAsc ? "asc" : "desc",
+        type: statusFilter,
+      };
+      const data = await post<ListResponse>('/admin/campaign/getlist', payload);
+      // Use campaigns array from response
+      setCampaigns(data.campaigns);
+      setTotal(data.total);
+      setTotalPages(data.totalPages);
+      setPage(data.page);
+      setError(null);
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || "Failed to load campaigns.");
+      setError(err.message || 'Failed to load campaigns.');
     } finally {
       setLoading(false);
     }
   };
 
-  const filtered = useMemo(() => {
-    return campaigns
-      .filter(c => (showActiveOnly ? c.isActive === 1 : true))
-      .filter(c =>
-        c.productOrServiceName.toLowerCase().includes(search.toLowerCase()) ||
-        c.description.toLowerCase().includes(search.toLowerCase()) ||
-        (c.brandName || "").toLowerCase().includes(search.toLowerCase())
-      );
-  }, [campaigns, showActiveOnly, search]);
+  // Initial & dependency-triggered load
+  useEffect(() => {
+    fetchCampaigns();
+  }, [page, sortKey, sortAsc, search, statusFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
-  const paginated = filtered.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const handleRefresh = () => fetchCampaigns();
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) setSortAsc(!sortAsc);
+    else {
+      setSortKey(key);
+      setSortAsc(true);
+    }
+    setPage(1);
+  };
 
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
     });
 
+  const renderSortIcon = (key: SortKey) =>
+    sortKey === key ? (sortAsc ? <HiChevronUp className="ml-1" /> : <HiChevronDown className="ml-1" />) : null;
+
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div className="p-6 bg-white min-h-screen">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6">
         <h1 className="text-3xl font-semibold">All Campaigns (Admin)</h1>
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap gap-3 items-center">
           <Input
             placeholder="Search campaigns..."
             value={search}
-            onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
-            className="max-w-sm"
+            onChange={e => { setSearch(e.target.value); setPage(1); }}
+            className="w-full sm:w-64"
           />
-          <Button onClick={fetchAll} variant="default" size="sm">
-            <HiOutlineRefresh className="mr-2 h-4 w-4" /> Reload
+          <Select
+            value={statusFilter.toString()}
+            onValueChange={val => { setStatusFilter(Number(val) as StatusFilter); setPage(1); }}
+          >
+            <SelectTrigger className="w-full sm:w-40">
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent className="bg-white">
+              {statusOptions.map(opt => (
+                <SelectItem key={opt.value} value={opt.value.toString()}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={loading}>
+            <HiOutlineRefresh className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
           </Button>
         </div>
       </div>
 
-      <div className="flex items-center space-x-2 mb-4">
-        <Checkbox
-          id="active-only"
-          checked={showActiveOnly}
-          onCheckedChange={checked => { setShowActiveOnly(!!checked); setCurrentPage(1); }}
-        />
-        <label htmlFor="active-only" className="text-gray-700">
-          Show Active Only
-        </label>
-      </div>
-
       {loading ? (
-        <Card className="text-center py-20 text-gray-500">
-          Loading campaigns…
+        <Card className="space-y-3">
+          {Array.from({ length: limit }).map((_, i) => (
+            <div key={i} className="h-6 w-full bg-gray-200 animate-pulse rounded" />
+          ))}
         </Card>
       ) : error ? (
-        <Card className="text-center py-20 text-red-600">
-          {error}
-        </Card>
-      ) : paginated.length === 0 ? (
-        <Card className="text-center py-20 text-gray-600">
-          No campaigns {showActiveOnly ? 'active' : 'found'}.
-        </Card>
+        <Card className="text-center py-20 text-red-600">{error}</Card>
+      ) : campaigns.length === 0 ? (
+        <Card className="text-center py-20 text-gray-600">No campaigns found.</Card>
       ) : (
         <Card>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Brand</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Goal</TableHead>
-                <TableHead>Interest</TableHead>
-                <TableHead>Dates</TableHead>
-                <TableHead>Budget</TableHead>
-                <TableHead>Applicants</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
+                {[
+                  { label: 'Name', key: 'productOrServiceName' },
+                  { label: 'Description', key: 'description' },
+                  { label: 'Goal', key: 'goal' },
+                  { label: 'Start', key: 'startDate' },
+                  { label: 'End', key: 'endDate' },
+                  { label: 'Budget', key: 'budget' },
+                  { label: 'Applicants', key: 'applicantCount' },
+                  { label: 'Status', key: 'status' },
+                  { label: 'Actions', key: '' },
+                ].map(col => (
+                  <TableHead
+                    key={col.label}
+                    className={col.key ? 'cursor-pointer select-none' : ''}
+                    onClick={() => col.key && toggleSort(col.key as SortKey)}
+                  >
+                    <div className="flex items-center">
+                      {col.label}{col.key && renderSortIcon(col.key as SortKey)}
+                    </div>
+                  </TableHead>
+                ))}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginated.map(c => (
+              {campaigns.map(c => (
                 <TableRow key={c.campaignsId}>
-                  <TableCell>{c.campaignsId}</TableCell>
-                  <TableCell>{c.brandName || '—'}</TableCell>
-                  <TableCell>
-                    <div className="font-medium">
-                      {c.productOrServiceName}
-                    </div>
-                    <div className="text-gray-600 line-clamp-1">
-                      {c.description}
-                    </div>
-                  </TableCell>
+                  <TableCell className="font-medium">{c.productOrServiceName}</TableCell>
+                  <TableCell className="text-gray-600 line-clamp-1">{c.description}</TableCell>
                   <TableCell>{c.goal || '—'}</TableCell>
-                  <TableCell>{c.interestName || '—'}</TableCell>
-                  <TableCell>
-                    {formatDate(c.timeline.startDate)} — {formatDate(c.timeline.endDate)}
-                  </TableCell>
+                  <TableCell>{formatDate(c.timeline.startDate)}</TableCell>
+                  <TableCell>{formatDate(c.timeline.endDate)}</TableCell>
                   <TableCell>${c.budget.toLocaleString()}</TableCell>
-                  <TableCell>{c.applicantCount ?? 0}</TableCell>
+                  <TableCell>{c.applicantCount || 0}</TableCell>
                   <TableCell>
                     {c.isActive === 1 ? (
                       <span className="inline-flex items-center space-x-1 text-green-600">
-                        <HiCheckCircle /> <span>Active</span>
+                        <HiCheckCircle /><span>Active</span>
                       </span>
                     ) : (
                       <span className="inline-flex items-center space-x-1 text-red-600">
-                        <HiXCircle /> <span>Inactive</span>
+                        <HiXCircle /><span>Inactive</span>
                       </span>
                     )}
                   </TableCell>
                   <TableCell>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Link
-                          href={`/admin/campaigns/view?id=${c.campaignsId}`}
-                          className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"
-                        >
-                          <HiOutlineEye size={18} />
+                        <Link href={`/admin/campaigns/view?id=${c.campaignsId}`}>
+                          <Button variant="ghost" size="icon" title="View Campaign">
+                            <HiOutlineEye />
+                          </Button>
                         </Link>
                       </TooltipTrigger>
                       <TooltipContent>View Details</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Link href={`/admin/campaigns/applicants?campaignId=${c.campaignsId}`}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="View Applicants"
+                          >
+                            <HiUserGroup className="h-5 w-5" />
+                          </Button>
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent>View Applicants</TooltipContent>
                     </Tooltip>
                   </TableCell>
                 </TableRow>
@@ -196,28 +256,19 @@ export default function AdminCampaignsPage() {
         </Card>
       )}
 
-      {/* Pagination */}
-      {!loading && !error && paginated.length > 0 && (
-        <div className="flex justify-end items-center p-4 space-x-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-            disabled={currentPage === 1}
-          >
-            <HiChevronLeft />
-          </Button>
-          <span className="text-gray-700">
-            Page {currentPage} of {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-            disabled={currentPage === totalPages}
-          >
-            <HiChevronRight />
-          </Button>
+      {!loading && !error && campaigns.length > 0 && (
+        <div className="flex justify-between items-center p-4">
+          <div className="text-sm text-gray-700">
+            Showing {(page - 1) * limit + 1}–{Math.min(page * limit, total)} of {total}
+          </div>
+          <div className="space-x-2">
+            <Button variant="outline" size="icon" disabled={page === 1} onClick={() => setPage(p => Math.max(p - 1, 1))}>
+              <HiChevronLeft />
+            </Button>
+            <Button variant="outline" size="icon" disabled={page === totalPages} onClick={() => setPage(p => Math.min(p + 1, totalPages))}>
+              <HiChevronRight />
+            </Button>
+          </div>
         </div>
       )}
     </div>

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Share2 } from 'lucide-react';
+import Image from 'next/image';
+import { Menu, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const Header: React.FC = () => {
   const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-1
+
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
@@ -36,12 +37,14 @@ const Header: React.FC = () => {
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
           <div className="flex items-center space-x-2">
-            <div className="p-2 bg-[#ef2f5b] rounded-lg">
-              <Share2 className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-900">
-              Collabglam
-            </span>
+            <img
+              src="./logo.png"
+              alt="Collabglam Logo"
+              width={50}
+              height={50}
+              className="rounded-lg"
+            />
+            <span className="text-xl font-bold text-gray-900">Collabglam</span>
           </div>
 
           {/* Desktop Navigation */}

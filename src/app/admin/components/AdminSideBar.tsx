@@ -9,15 +9,18 @@ import {
   Home,
   Users,
   List,
-  Bookmark,
   Menu,
   X,
+  DollarSign,
+  MessageCircleIcon,
 } from "lucide-react";
 
 const navItems = [
-  { label: "Brands",             href: "/admin/brands",        icon: Home     },
-  { label: "Influencers",        href: "/admin/influencers",   icon: Users    },
-  { label: "All Campaigns",      href: "/admin/campaigns",     icon: List     },
+  { label: "Brands", href: "/admin/brands", icon: Home },
+  { label: "Influencers", href: "/admin/influencers", icon: Users },
+  { label: "All Campaigns", href: "/admin/campaigns", icon: List },
+  { label: "Subscriptions", href: '/admin/subscriptions', icon: DollarSign },
+  { label: "Messages", href: '/admin/messages', icon: MessageCircleIcon }
 ];
 
 export default function AdminSidebar() {
@@ -30,8 +33,8 @@ export default function AdminSidebar() {
   }, [open]);
 
   const drawerVariants = {
-    hidden:  { x: "-100%" },
-    visible: { x:    "0%" },
+    hidden: { x: "-100%" },
+    visible: { x: "0%" },
   };
 
   return (
@@ -61,18 +64,16 @@ export default function AdminSidebar() {
                 <Link
                   key={href}
                   href={href}
-                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    active
+                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${active
                       ? "bg-blue-50 text-blue-600"
                       : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                  }`}
+                    }`}
                 >
                   <Icon
-                    className={`mr-3 h-5 w-5 transition-colors ${
-                      active
+                    className={`mr-3 h-5 w-5 transition-colors ${active
                         ? "text-blue-600"
                         : "text-gray-400 hover:text-gray-500"
-                    }`}
+                      }`}
                   />
                   {label}
                 </Link>
@@ -122,19 +123,17 @@ export default function AdminSidebar() {
                     <Link
                       key={href}
                       href={href}
-                      className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        active
+                      className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${active
                           ? "bg-blue-50 text-blue-600"
                           : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                      }`}
+                        }`}
                       onClick={() => setOpen(false)}
                     >
                       <Icon
-                        className={`mr-3 h-5 w-5 transition-colors ${
-                          active
+                        className={`mr-3 h-5 w-5 transition-colors ${active
                             ? "text-blue-600"
                             : "text-gray-400 hover:text-gray-500"
-                        }`}
+                          }`}
                       />
                       {label}
                     </Link>

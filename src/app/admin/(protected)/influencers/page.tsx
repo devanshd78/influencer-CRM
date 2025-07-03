@@ -1,222 +1,267 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
+import { NextPage } from "next";
 import Link from "next/link";
-import { get, post } from "@/lib/api";
-import {
-  HiOutlineRefresh,
-  HiOutlineEye,
-  HiChevronLeft,
-  HiChevronRight,
-  HiCheckCircle,
-  HiXCircle,
-} from "react-icons/hi";
-import { Card } from "@/components/ui/card";
+import { post } from "@/lib/api";
+import { HiOutlineRefresh, HiOutlineEye, HiChevronUp, HiChevronDown, HiChevronLeft, HiChevronRight } from "react-icons/hi";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
   Table,
-  TableHeader,
   TableBody,
-  TableRow,
-  TableHead,
   TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
+import { Card } from "@/components/ui/card";
+import { Pagination } from "@/components/ui/pagination";
 
-interface SubscriptionFeature {
-  key: string;
-  limit: number;
-  used: number;
+// Domain types updated to handle optional subscription for some records
+interface Subscription {
+  planName: string;
+  expiresAt: string;
 }
 
-interface Influencer {
+export interface Influencer {
   influencerId: string;
   name: string;
   email: string;
-  phone: string;
+  callingcode?: string;
+  phone?: string;
   socialMedia: string;
-  county: string;
-  callingcode: string;
-  subscription: {
-    planName: string;
-    expiresAt?: string;
-    features: SubscriptionFeature[];
-  };
-  subscriptionExpired: boolean;
-  createdAt: string;
+  subscriptionExpired?: boolean;
+  subscription?: Subscription;
 }
 
-export default function AdminInfluencersPage() {
+interface GetListResponse {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  influencers: Influencer[];
+}
+
+const SORTABLE_FIELDS: { [key: string]: string } = {
+  name: "Name",
+  email: "Email",
+  phone: "Phone",
+  socialMedia: "Platform",
+  planName: "Plan",
+  expiresAt: "Expires",
+  subscriptionExpired: "Status",
+};
+
+const AdminInfluencersPage: NextPage = () => {
   const [influencers, setInfluencers] = useState<Influencer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [showNonExpiredOnly, setShowNonExpiredOnly] = useState(false);
-  const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
 
-  useEffect(() => {
-    fetchInfluencers();
-  }, []);
-
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [search, setSearch] = useState<string>("");
+  const [sortBy, setSortBy] = useState<string>("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [page, setPage] = useState<number>(1);
+  const [limit] = useState<number>(10);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  
   const fetchInfluencers = async () => {
     setLoading(true);
-    setError(null);
     try {
-      // API returns an array of Influencer objects
-      const data = await post<Influencer[]>("/influencer/getlist");
-      setInfluencers(Array.isArray(data) ? data : []);
+      const params = { page, limit: pageSize, search, sortBy, sortOrder };
+      const response = await post<GetListResponse>(
+        "/admin/influencer/getlist",
+        params
+      );
+      setInfluencers(response.influencers);
+      setTotal(response.total);
+      setPage(response.page);
+      setPageSize(response.limit);
+      setTotalPages(response.totalPages)
+      setError(null);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Failed to load influencers.');
+      setError(err.message || "Failed to load influencers.");
     } finally {
       setLoading(false);
     }
   };
 
-  const filtered = useMemo(() => {
-    return influencers
-      .filter(i => (showNonExpiredOnly ? !i.subscriptionExpired : true))
-      .filter(i =>
-        i.name.toLowerCase().includes(search.toLowerCase()) ||
-        i.email.toLowerCase().includes(search.toLowerCase()) ||
-        i.socialMedia.toLowerCase().includes(search.toLowerCase())
-      );
-  }, [influencers, showNonExpiredOnly, search]);
+  React.useEffect(() => {
+    fetchInfluencers();
+  }, [page, pageSize, search, sortBy, sortOrder]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
-  const paginated = filtered.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+  const toggleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(field);
+      setSortOrder("asc");
+    }
+    setPage(1);
+  };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <h1 className="text-3xl font-semibold">All Influencers (Admin)</h1>
-        <div className="flex items-center space-x-2">
+    <div className="p-6 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <h1 className="text-3xl font-bold">
+          Influencers Administration
+        </h1>
+        <div className="flex items-center gap-2">
           <Input
-            placeholder="Search influencers..."
+            placeholder="Search by name, email, platform..."
             value={search}
-            onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
-            className="max-w-sm"
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="w-full sm:w-64"
           />
-          <Button onClick={fetchInfluencers} variant="default" size="sm">
-            <HiOutlineRefresh className="mr-2 h-4 w-4" /> Reload
+          <Button
+            variant="outline"
+            onClick={fetchInfluencers}
+            disabled={loading}
+          >
+            <HiOutlineRefresh
+              className={loading ? "animate-spin" : ""}
+            />
+            Refresh
           </Button>
         </div>
       </div>
 
-      <div className="flex items-center space-x-2 mb-4">
-        <Checkbox
-          id="non-expired-only"
-          checked={showNonExpiredOnly}
-          onCheckedChange={checked => { setShowNonExpiredOnly(!!checked); setCurrentPage(1); }}
-        />
-        <label htmlFor="non-expired-only" className="text-gray-700">
-          Show Non-Expired Only
-        </label>
-      </div>
-
-      {loading ? (
-        <Card className="text-center py-20 text-gray-500">Loading influencers…</Card>
-      ) : error ? (
-        <Card className="text-center py-20 text-red-600">{error}</Card>
-      ) : paginated.length === 0 ? (
-        <Card className="text-center py-20 text-gray-600">
-          No influencers {showNonExpiredOnly ? 'non-expired' : 'found'}.
-        </Card>
-      ) : (
-        <Card>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Social</TableHead>
-                <TableHead>Plan</TableHead>
-                <TableHead>Expires</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginated.map(i => (
-                <TableRow key={i.influencerId}>
-                  <TableCell>{i.influencerId}</TableCell>
-                  <TableCell>{i.name}</TableCell>
-                  <TableCell>{i.email}</TableCell>
-                  <TableCell>{`${i.callingcode}${i.phone}`}</TableCell>
-                  <TableCell>{i.socialMedia}</TableCell>
-                  <TableCell>{i.subscription.planName}</TableCell>
-                  <TableCell>{i.subscription.expiresAt ? formatDate(i.subscription.expiresAt) : 'N/A'}</TableCell>
-                  <TableCell>{formatDate(i.createdAt)}</TableCell>
-                  <TableCell>
-                    {!i.subscriptionExpired ? (
-                      <span className="inline-flex items-center space-x-1 text-green-600">
-                        <HiCheckCircle /><span>Active</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center space-x-1 text-red-600">
-                        <HiXCircle /><span>Expired</span>
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Link
-                          href={`/admin/influencers/view?influencerId=${i.influencerId}`}
-                          className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"
-                        >
-                          <HiOutlineEye size={18} />
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent>View Influencer</TooltipContent>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
+      {error && (
+        <Card className="text-red-600 p-4">{error}</Card>
       )}
 
-      {!loading && !error && paginated.length > 0 && (
-        <div className="flex justify-end items-center p-4 space-x-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-            disabled={currentPage === 1}
-          >
-            <HiChevronLeft />
-          </Button>
-          <span className="text-gray-700">
-            Page {currentPage} of {Math.ceil(filtered.length / itemsPerPage)}
-          </span>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setCurrentPage(p => Math.min(p + 1, Math.ceil(filtered.length / itemsPerPage)))}
-            disabled={currentPage === Math.ceil(filtered.length / itemsPerPage)}
-          >
-            <HiChevronRight />
-          </Button>
+      <Card className="overflow-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {Object.entries(SORTABLE_FIELDS).map(([field, label]) => (
+                <TableHead
+                  key={field}
+                  onClick={() => toggleSort(field)}
+                  className="cursor-pointer select-none"
+                >
+                  <div className="flex items-center">
+                    {label}
+                    {sortBy === field &&
+                      (sortOrder === "asc" ? (
+                        <HiChevronUp className="ml-1" />
+                      ) : (
+                        <HiChevronDown className="ml-1" />
+                      ))}
+                  </div>
+                </TableHead>
+              ))}
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading
+              ? Array.from({ length: pageSize }).map((_, rowIdx) => (
+                  <TableRow key={rowIdx}>
+                    {Array(
+                      Object.keys(SORTABLE_FIELDS).length + 1
+                    )
+                      .fill(0)
+                      .map((_, cellIdx) => (
+                        <TableCell key={cellIdx}>
+                          <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                        </TableCell>
+                      ))}
+                  </TableRow>
+                ))
+              : influencers.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={Object.keys(SORTABLE_FIELDS).length + 1}
+                    className="text-center text-gray-500 py-8"
+                  >
+                    No influencers match the criteria.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                influencers.map((inf) => (
+                  <TableRow key={inf.influencerId}>
+                    <TableCell>{inf.name}</TableCell>
+                    <TableCell>{inf.email}</TableCell>
+                    <TableCell>
+                      {inf.callingcode
+                        ? `${inf.callingcode}${inf.phone}`
+                        : inf.phone}
+                    </TableCell>
+                    <TableCell>{inf.socialMedia}</TableCell>
+                    <TableCell>
+                      {inf.subscription?.planName ?? "-"}
+                    </TableCell>
+                    <TableCell>
+                      {inf.subscription?.expiresAt
+                        ? new Date(
+                            inf.subscription.expiresAt
+                          ).toLocaleDateString()
+                        : "-"}
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={
+                          inf.subscriptionExpired
+                            ? "text-red-600"
+                            : "text-green-600"
+                        }
+                      >
+                        {inf.subscriptionExpired ? "Expired" : "Active"}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Link
+                            href={`/admin/influencers/view?influencerId=${inf.influencerId}`}
+                          >
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                            >
+                              <HiOutlineEye />
+                            </Button>
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          View details
+                        </TooltipContent>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+          </TableBody>
+        </Table>
+      </Card>
+
+      {!loading && !error && influencers.length > 0 && (
+        <div className="flex justify-between items-center p-4">
+          <div className="text-sm text-gray-700">
+            Showing {(page - 1) * limit + 1}–{Math.min(page * limit, total)} of {total}
+          </div>
+          <div className="space-x-2">
+            <Button variant="outline" size="icon" disabled={page === 1} onClick={() => setPage(p => Math.max(p - 1, 1))}>
+              <HiChevronLeft />
+            </Button>
+            <Button variant="outline" size="icon" disabled={page === totalPages} onClick={() => setPage(p => Math.min(p + 1, totalPages))}>
+              <HiChevronRight />
+            </Button>
+          </div>
         </div>
       )}
     </div>
   );
-}
+};
+
+export default AdminInfluencersPage;
