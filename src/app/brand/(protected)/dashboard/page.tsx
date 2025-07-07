@@ -21,8 +21,8 @@ export default function BrandDashboardHome() {
         {/* Page Body */}
         <main className="flex-1 px-6 py-8">
           {/* Welcome Banner */}
-          <div className="rounded-lg bg-gradient-to-r from-[#ef2f5b]/20 to-[#ffe8ed]/50 p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">
+          <div className="rounded-lg bg-white p-6 mb-8">
+            <h2 className="text-xl font-semibold text-[#ef2f5b] mb-2">
               Welcome Back, Brand Manager!
             </h2>
             <p className="text-gray-700">

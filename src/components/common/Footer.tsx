@@ -77,9 +77,7 @@ const Footer = () => {
               </div>
 
               <p className="text-gray-300 mb-6 leading-relaxed">
-                Empowering content creators worldwide to monetize their passion
-                and build sustainable businesses through intelligent sharing and
-                distribution.
+                Empowering brands and influencers worldwide to forge lucrative partnerships and scale sustainably through intelligent collaboration and distribution.
               </p>
 
               {/* Contact Info */}

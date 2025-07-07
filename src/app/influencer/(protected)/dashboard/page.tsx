@@ -24,7 +24,7 @@ const earningsData = [
 export default function InfluencerDashboard() {
   return (
     <div className="flex h-screen">
-      <div className="flex-1 bg-gray-100 p-6 overflow-y-auto">
+      <div className="flex-1 bg-[#F5E1A4]/20 p-6 overflow-y-auto">
         <h1 className="text-2xl font-semibold mb-4">Dashboard</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

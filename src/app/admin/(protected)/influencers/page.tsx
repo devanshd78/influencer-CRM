@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { NextPage } from "next";
 import Link from "next/link";
 import { post } from "@/lib/api";
-import { HiOutlineRefresh, HiOutlineEye, HiChevronUp, HiChevronDown, HiChevronLeft, HiChevronRight } from "react-icons/hi";
+import { HiOutlineRefresh, HiOutlineEye, HiChevronUp, HiChevronDown, HiChevronLeft, HiChevronRight, HiOutlineClipboardList } from "react-icons/hi";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,7 +69,7 @@ const AdminInfluencersPage: NextPage = () => {
   const [page, setPage] = useState<number>(1);
   const [limit] = useState<number>(10);
   const [totalPages, setTotalPages] = useState<number>(1);
-  
+
   const fetchInfluencers = async () => {
     setLoading(true);
     try {
@@ -166,18 +166,18 @@ const AdminInfluencersPage: NextPage = () => {
           <TableBody>
             {loading
               ? Array.from({ length: pageSize }).map((_, rowIdx) => (
-                  <TableRow key={rowIdx}>
-                    {Array(
-                      Object.keys(SORTABLE_FIELDS).length + 1
-                    )
-                      .fill(0)
-                      .map((_, cellIdx) => (
-                        <TableCell key={cellIdx}>
-                          <div className="h-4 bg-gray-200 rounded animate-pulse" />
-                        </TableCell>
-                      ))}
-                  </TableRow>
-                ))
+                <TableRow key={rowIdx}>
+                  {Array(
+                    Object.keys(SORTABLE_FIELDS).length + 1
+                  )
+                    .fill(0)
+                    .map((_, cellIdx) => (
+                      <TableCell key={cellIdx}>
+                        <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                      </TableCell>
+                    ))}
+                </TableRow>
+              ))
               : influencers.length === 0 ? (
                 <TableRow>
                   <TableCell
@@ -204,8 +204,8 @@ const AdminInfluencersPage: NextPage = () => {
                     <TableCell>
                       {inf.subscription?.expiresAt
                         ? new Date(
-                            inf.subscription.expiresAt
-                          ).toLocaleDateString()
+                          inf.subscription.expiresAt
+                        ).toLocaleDateString()
                         : "-"}
                     </TableCell>
                     <TableCell>
@@ -236,6 +236,16 @@ const AdminInfluencersPage: NextPage = () => {
                         <TooltipContent>
                           View details
                         </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Link href={`/admin/influencers/campaigns?influencerId=${inf.influencerId}`}>
+                            <Button variant="ghost" size="icon">
+                              <HiOutlineClipboardList />
+                            </Button>
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent>Campaigns details</TooltipContent>
                       </Tooltip>
                     </TableCell>
                   </TableRow>

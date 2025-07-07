@@ -110,7 +110,7 @@ export default function MyCampaignsPage() {
     }).format(amt);
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-[#F5E1A4]/5 min-h-screen">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-semibold">Top Featured Campaigns for You</h1>
       </div>

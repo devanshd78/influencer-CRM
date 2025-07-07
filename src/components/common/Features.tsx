@@ -37,10 +37,6 @@ const Features = () => (
                 <p className="text-lg text-gray-600 mb-6 leading-relaxed">
                   {description}
                 </p>
-                <button className="group inline-flex items-center text-[#ef2f5b] font-semibold hover:text-[#c21f4f] transition-colors">
-                  Learn more
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </button>
               </div>
 
               {/* Image */}

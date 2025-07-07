@@ -150,7 +150,7 @@ const Pricing: React.FC = () => {
 
         {/* Legal footnote */}
         <p className="text-center text-gray-500 text-sm mt-12">
-          All paid plans include a 14-day free trial • No setup fees • Cancel any time
+          All paid plans include a 7-day Money Back-Guranatee • No setup fees • Cancel any time
         </p>
       </div>
     </section>

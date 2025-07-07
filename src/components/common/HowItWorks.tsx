@@ -1,27 +1,30 @@
 import React from 'react';
-import { Upload, Share, DollarSign } from 'lucide-react';
+import { Upload, Share, DollarSign, Megaphone, UserCheck, Handshake } from 'lucide-react';
 
 const HowItWorks = () => {
-  const steps = [
-    {
-      icon: Upload,
-      title: "Upload Content",
-      description: "Share your videos, articles, courses, or any digital content with our secure platform.",
-      color: "from-[#ef2f5b] to-[#c21f4f]"
-    },
-    {
-      icon: Share,
-      title: "Smart Distribution",
-      description: "Our AI-powered system optimizes your content across multiple channels for maximum reach.",
-      color: "from-purple-500 to-purple-600"
-    },
-    {
-      icon: DollarSign,
-      title: "Earn Revenue",
-      description: "Get paid instantly as your content generates views, leads, and conversions worldwide.",
-      color: "from-blue-500 to-blue-600"
-    }
-  ];
+const steps = [
+  {
+    icon: Megaphone,
+    title: "Launch Campaign",
+    description:
+      "Create and launch your brand’s campaign—set your goals, budget, and target audience to get started.",
+    color: "from-[#FF8C00] to-[#FF5E7E]",
+  },
+  {
+    icon: UserCheck,
+    title: "Apply & Approve",
+    description:
+      "Influencers submit their proposals; you review their profiles and approve the perfect matches.",
+    color: "from-[#FF8C00] to-[#FF5E7E]",
+  },
+  {
+    icon: Handshake,
+    title: "Collaborate",
+    description:
+      "Work hand-in-hand with your chosen influencers to drive results—and post more Campaigns.",
+    color: "from-[#FF8C00] to-[#FF5E7E]",
+  },
+];
 
   return (
     <section id="how-it-works" className="py-20 bg-white font-lexend">
@@ -31,7 +34,7 @@ const HowItWorks = () => {
             How It Works
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Three simple steps to transform your content into a revenue-generating machine
+            Three simple steps to launch your first collaboration and start earning.
           </p>
         </div>
 
@@ -49,7 +52,7 @@ const HowItWorks = () => {
                 </div>
 
                 {/* Step Number */}
-                <div className="absolute -top-4 -right-4 w-8 h-8 bg-[#ef2f5b] rounded-full flex items-center justify-center text-white font-bold text-sm">
+                <div className="absolute -top-4 -right-4 w-8 h-8 bg-[#FF8C00] rounded-full flex items-center justify-center text-white font-bold text-sm">
                   {index + 1}
                 </div>
 

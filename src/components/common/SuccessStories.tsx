@@ -9,47 +9,47 @@ const SuccessStories = () => {
       name: "Sarah Johnson",
       role: "Fitness Influencer",
       image: "https://images.pexels.com/photos/3768911/pexels-photo-3768911.jpeg?auto=compress&cs=tinysrgb&w=400",
-      revenue: "$45K",
+      revenue: "$24K",
       growth: "300%",
       timeframe: "6 months",
-      quote: "Collabglam transformed my fitness content into a thriving business. The analytics helped me understand my audience better and optimize my content strategy.",
+      quote: "Collabglam transformed my fitness content into a thriving business. The dashboard helped me reach more brands and optimize my content strategy.",
       results: [
         "Increased monthly revenue from $2K to $45K",
-        "Grew subscriber base by 300% in 6 months",
+        "Grew follower base by 300% in 6 months",
         "Launched successful online fitness program"
       ]
     },
     {
       name: "Marcus Chen",
-      role: "Tech Educator",
+      role: "Tech Reviewer",
       image: "https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg?auto=compress&cs=tinysrgb&w=400",
-      revenue: "$120K",
-      growth: "500%",
-      timeframe: "8 months",
-      quote: "The multi-platform integration saved me hours of manual work. Now I can focus on creating quality content while Collabglam handles the distribution.",
+      revenue: "$10K",
+      growth: "330%",
+      timeframe: "4 months",
+      quote: "The CollabGlam saved me hours of manual work. Now I can focus on creating quality content while Collabglam handles finding deal.",
       results: [
         "Built a tech education empire worth $120K annually",
-        "Automated content distribution to 12 platforms",
+        "Easy Brand findings and deal management with Collabglam",
         "Created passive income streams through course sales"
       ]
     },
     {
       name: "Emma Rodriguez",
-      role: "Digital Artist",
+      role: "TikTok Influencer",
       image: "https://images.pexels.com/photos/3756681/pexels-photo-3756681.jpeg?auto=compress&cs=tinysrgb&w=400",
-      revenue: "$30K",
-      growth: "250%",
-      timeframe: "4 months",
-      quote: "As an artist, I never thought I could make this much from my digital art. Collabglam's platform made monetization simple and effective.",
+      revenue: "$23K",
+      growth: "230%",
+      timeframe: "2 months",
+      quote: "As an Tiktok Influencer, I never thought I could make this much from Collabglam. Collabglam's platform made my revenue & growth simple and effective.",
       results: [
-        "Sold digital art worth $30K in 4 months",
-        "Built a community of 50K+ art enthusiasts",
-        "Launched exclusive NFT collections"
+        "Collaborated with multiple brands in 2 months",
+        "Built a community of recurring Brands",
+        "Launched exclusive co-operation with top brands"
       ]
     }
   ];
 
-  const nextStory = () => {
+ const nextStory = () => {
     setCurrentStory((prev) => (prev + 1) % stories.length);
   };
 
@@ -60,14 +60,14 @@ const SuccessStories = () => {
   const currentStoryData = stories[currentStory];
 
   return (
-    <section id="success-stories" className="py-20 bg-gray-900 font-lexend">
+    <section id="success-stories" className="py-20 bg-gradient-to-r from-[#FF8C00] via-[#FF5E7E] to-[#D12E53] font-lexend">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">
             Success Stories
           </h2>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Real creators, real results. See how Collabglam is transforming lives and businesses.
+            Real Influencers, real results. See how Collabglam is transforming lives and businesses.
           </p>
         </div>
 
@@ -108,11 +108,6 @@ const SuccessStories = () => {
                   </div>
                 ))}
               </div>
-
-              <button className="group inline-flex items-center text-[#ef2f5b] font-semibold hover:text-[#c21f4f] transition-colors">
-                Read full story
-                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </button>
             </div>
 
             {/* Stats */}
@@ -177,4 +172,4 @@ const SuccessStories = () => {
   );
 };
 
-export default SuccessStories;
+export default SuccessStories; 

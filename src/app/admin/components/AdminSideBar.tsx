@@ -13,6 +13,7 @@ import {
   X,
   DollarSign,
   MessageCircleIcon,
+  MailCheckIcon,
 } from "lucide-react";
 
 const navItems = [
@@ -20,7 +21,8 @@ const navItems = [
   { label: "Influencers", href: "/admin/influencers", icon: Users },
   { label: "All Campaigns", href: "/admin/campaigns", icon: List },
   { label: "Subscriptions", href: '/admin/subscriptions', icon: DollarSign },
-  { label: "Messages", href: '/admin/messages', icon: MessageCircleIcon }
+  { label: "Messages", href: '/admin/messages', icon: MessageCircleIcon },
+  { label : "E-Mails", href: '/admin/emails', icon: MailCheckIcon },
 ];
 
 export default function AdminSidebar() {

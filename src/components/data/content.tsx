@@ -1,51 +1,50 @@
-// Everything you listed in the “features I provided” note.
 export const featuresData = [
   {
-    icon: 'BarChart3',
-    title: 'Advanced Analytics',
+    icon: 'Megaphone',
+    title: 'Campaign Builder',
     description:
-      'Real‑time insights into performance, demographics and revenue.',
+      'Easily create, customize, and launch campaigns with our intuitive UI.',
     image:
-      'https://images.pexels.com/photos/590022/pexels-photo-590022.jpeg?auto=compress&cs=tinysrgb&w=800'
+      'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=800'
   },
   {
-    icon: 'Shield',
-    title: 'Enterprise Security',
+    icon: 'Search',
+    title: 'Influencer Marketing Tool',
     description:
-      'Bank‑level encryption, secure payments and GDPR compliance.',
-    image:
-      'https://images.pexels.com/photos/60504/security-protection-anti-virus-software-60504.jpeg?auto=compress&cs=tinysrgb&w=800'
-  },
-  {
-    icon: 'Zap',
-    title: 'Lightning Fast Delivery',
-    description:
-      'Global CDN means your content loads instantly anywhere in the world.',
-    image:
-      'https://images.pexels.com/photos/373543/pexels-photo-373543.jpeg?auto=compress&cs=tinysrgb&w=800'
-  },
-  {
-    icon: 'Globe',
-    title: 'Multi‑Platform Integration',
-    description:
-      'Connect with YouTube, Instagram, TikTok, LinkedIn and 50+ more.',
+      'Find and connect with influencers worldwide 1K–100M followers in your niche.',
     image:
       'https://images.pexels.com/photos/267350/pexels-photo-267350.jpeg?auto=compress&cs=tinysrgb&w=800'
   },
   {
     icon: 'Users',
-    title: 'Audience Management',
+    title: 'Smart Matching',
     description:
-      'Segment, personalise and nurture your community at scale.',
+      'Our AI-driven system perfectly finds the perfect influencer for your brand based on performance data.',
     image:
-      'https://images.pexels.com/photos/3184432/pexels-photo-3184432.jpeg?auto=compress&cs=tinysrgb&w=800'
+      'https://images.pexels.com/photos/3183197/pexels-photo-3183197.jpeg?auto=compress&cs=tinysrgb&w=800'
+  },
+  // {
+  //   icon: 'BarChart3',
+  //   title: 'Performance Analytics',
+  //   description:
+  //     'Access real-time insights on views, engagement, and revenue to optimize your campaigns.',
+  //   image:
+  //     'https://images.pexels.com/photos/590022/pexels-photo-590022.jpeg?auto=compress&cs=tinysrgb&w=800'
+  // },
+  {
+    icon: 'Shield',
+    title: 'Secure Payments',
+    description:
+      'CollabGlam wallet makes instant, encrypted payouts ensure both brands and influencers get paid promptly and securely.',
+    image:
+      'https://images.pexels.com/photos/60504/security-protection-anti-virus-software-60504.jpeg?auto=compress&cs=tinysrgb&w=800'
   },
   {
-    icon: 'Settings',
-    title: 'Workflow Automation',
+    icon: 'Globe',
+    title: 'Global Reach',
     description:
-      'Automate distribution, payments and customer comms with ease.',
+      'Discover Brands & Influencers across multiple platforms worldwide, maximizing your Growth & Revenue.',
     image:
-      'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=800'
+      'https://images.pexels.com/photos/267350/pexels-photo-267350.jpeg?auto=compress&cs=tinysrgb&w=800'
   }
 ];
