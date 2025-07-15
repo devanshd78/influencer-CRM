@@ -1,11 +1,14 @@
-"use client"
+'use client'
 
 import React, { useEffect, useState } from 'react';
 import { NextPage } from 'next';
 import { post } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import {
+  Table, TableHeader, TableBody,
+  TableRow, TableHead, TableCell
+} from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Feature {
@@ -65,7 +68,7 @@ const SubscriptionsPage: NextPage = () => {
   }, []);
 
   if (loading) return <p>Loading plans...</p>;
-  if (error) return <p className="text-red-600">{error}</p>;
+  if (error)   return <p className="text-red-600">{error}</p>;
 
   const plans = activeRole === 'Brand' ? brandPlans : influencerPlans;
   const featureKeys = Array.from(
@@ -74,16 +77,18 @@ const SubscriptionsPage: NextPage = () => {
 
   const startEditing = (plan: SubscriptionPlan) => {
     setEditingPlanId(plan._id);
+    setEditedName(plan.name);
     setEditedCost(plan.monthlyCost.toString());
-    const initial: Record<string, string> = {};
+    const initialFeatures: Record<string, string> = {};
     plan.features.forEach(f => {
-      initial[f.key] = String(f.value);
+      initialFeatures[f.key] = String(f.value);
     });
-    setEditedFeatures(initial);
+    setEditedFeatures(initialFeatures);
   };
 
   const cancelEditing = () => {
     setEditingPlanId(null);
+    setEditedName('');
     setEditedCost('');
     setEditedFeatures({});
   };
@@ -92,13 +97,19 @@ const SubscriptionsPage: NextPage = () => {
     try {
       const payload = {
         planId: plan.planId,
+        name: editedName.trim(),
         monthlyCost: parseFloat(editedCost),
-        features: featureKeys.map(key => ({ key, value: Number(editedFeatures[key] || 0) })),
+        features: featureKeys.map(key => ({
+          key,
+          value: Number(editedFeatures[key] ?? 0),
+        })),
       };
       await post('/subscription/update', payload);
+      // refetch only the active role
       await fetchPlans(activeRole, activeRole === 'Brand' ? setBrandPlans : setInfluencerPlans);
       cancelEditing();
-    } catch {
+    } catch (err) {
+      console.error('Save error:', err);
       setError('Failed to save changes.');
     }
   };
@@ -106,18 +117,15 @@ const SubscriptionsPage: NextPage = () => {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-semibold">Subscription Plans</h1>
+
       <Tabs
         value={activeRole}
-        onValueChange={value => setActiveRole(value as Role)}
+        onValueChange={(v) => setActiveRole(v as Role)}
         className="bg-white rounded-lg shadow p-2 w-max"
       >
         <TabsList className="grid grid-cols-2">
-          <TabsTrigger value="Brand" className="text-sm">
-            Brand
-          </TabsTrigger>
-          <TabsTrigger value="Influencer" className="text-sm">
-            Influencer
-          </TabsTrigger>
+          <TabsTrigger value="Brand" className="text-sm">Brand</TabsTrigger>
+          <TabsTrigger value="Influencer" className="text-sm">Influencer</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -128,7 +136,10 @@ const SubscriptionsPage: NextPage = () => {
               <TableHead>Name</TableHead>
               <TableHead className="text-center">Cost</TableHead>
               {featureKeys.map(key => (
-                <TableHead key={key} className="text-center capitalize text-sm">
+                <TableHead
+                  key={key}
+                  className="text-center capitalize text-sm"
+                >
                   {key.replace(/_/g, ' ')}
                 </TableHead>
               ))}
@@ -140,15 +151,17 @@ const SubscriptionsPage: NextPage = () => {
               const isEditing = editingPlanId === plan._id;
               return (
                 <TableRow key={plan._id}>
-                  <TableCell className="font-medium">{isEditing ? (
+                  <TableCell className="font-medium">
+                    {isEditing ? (
                       <Input
                         value={editedName}
                         onChange={e => setEditedName(e.target.value)}
-                        className="w-24 mx-auto"
+                        className="w-32 mx-auto"
                       />
                     ) : (
-                      `${plan.name}`
-                    )}</TableCell>
+                      plan.name
+                    )}
+                  </TableCell>
                   <TableCell className="text-center">
                     {isEditing ? (
                       <Input
@@ -164,8 +177,13 @@ const SubscriptionsPage: NextPage = () => {
                     <TableCell key={key} className="text-center">
                       {isEditing ? (
                         <Input
-                          value={editedFeatures[key] || ''}
-                          onChange={e => setEditedFeatures(prev => ({ ...prev, [key]: e.target.value }))}
+                          value={editedFeatures[key] ?? ''}
+                          onChange={e =>
+                            setEditedFeatures(prev => ({
+                              ...prev,
+                              [key]: e.target.value,
+                            }))
+                          }
                           className="w-16 mx-auto"
                         />
                       ) : (
@@ -175,16 +193,28 @@ const SubscriptionsPage: NextPage = () => {
                   ))}
                   <TableCell className="flex justify-center items-center">
                     {isEditing ? (
-                      <div className="flex justify-center space-x-2">
-                        <Button size="sm" variant="outline" onClick={() => saveEditing(plan)}>
+                      <div className="flex space-x-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => saveEditing(plan)}
+                        >
                           Save
                         </Button>
-                        <Button size="sm" variant="outline" onClick={cancelEditing}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={cancelEditing}
+                        >
                           Cancel
                         </Button>
                       </div>
                     ) : (
-                      <Button size="sm" variant="outline" onClick={() => startEditing(plan)}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => startEditing(plan)}
+                      >
                         Edit
                       </Button>
                     )}
