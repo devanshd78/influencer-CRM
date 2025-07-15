@@ -66,7 +66,7 @@ const SuccessStories = () => {
           <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">
             Success Stories
           </h2>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+          <p className="text-xl text-white max-w-3xl mx-auto">
             Real Influencers, real results. See how Collabglam is transforming lives and businesses.
           </p>
         </div>

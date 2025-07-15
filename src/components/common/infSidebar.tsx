@@ -5,14 +5,13 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  HiOutlineChartBar,
-  HiOutlineClipboardList,
-  HiCurrencyDollar,
   HiChatAlt2,
-  HiBell,
   HiLogout,
-  HiMenu,
   HiX,
+  HiHome,
+  HiPlusCircle,
+  HiClipboardList,
+  HiCreditCard,
 } from "react-icons/hi";
 
 interface MenuItem {
@@ -23,14 +22,35 @@ interface MenuItem {
 }
 
 const menuSections: { title: string; items: MenuItem[] }[] = [
-  {
+{
     title: "Main",
     items: [
-      { name: "New Collab", href: "/influencer/new-collab", icon: HiOutlineClipboardList },
-      { name: "My Campaigns", href: "/influencer/my-campaign", icon: HiOutlineChartBar },
-      { name: "Earnings", href: "/influencer/earnings", icon: HiCurrencyDollar },
-      { name: "Messages", href: "/influencer/messages", icon: HiChatAlt2, badgeCount: 3 },
-      { name: "Notifications", href: "/influencer/notifications", icon: HiBell, badgeCount: 5 },
+      {
+        name: "Dashboard",
+        href: "/influencer/dashboard",
+        icon: HiHome,
+      },
+      {
+        name: "New Collab",
+        href: "/influencer/new-collab",
+        icon: HiPlusCircle,
+      },
+      {
+        name: "My Campaigns",
+        href: "/influencer/my-campaign",
+        icon: HiClipboardList,
+      },
+      {
+        name: "Messages",
+        href: "/influencer/messages",
+        icon: HiChatAlt2,
+        badgeCount: 3,
+      },
+      {
+        name: "Subscriptions",
+        href: "/influencer/subscriptions",
+        icon: HiCreditCard,
+      },
     ],
   },
 ];
@@ -190,7 +210,7 @@ export default function InfluencerSidebar({ isOpen, onClose }: InfluencerSidebar
                         </li>
                       );
                     })}
-                  </ul>
+                    </ul>
                 </div>
               ))}
             </nav>

@@ -7,7 +7,6 @@ import React, {
   useCallback,
   useMemo,
   FormEvent,
-  ReactNode,
 } from "react";
 import { get, post } from "@/lib/api";
 import Select from "react-select";
@@ -16,8 +15,8 @@ import "sweetalert2/dist/sweetalert2.css";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { FloatingLabelInput } from "@/components/common/FloatingLabelInput";
+
 
 type Tab = "login" | "signup";
 type Role = "brand" | "influencer";
@@ -44,6 +43,7 @@ const buildCountryOptions = (countries: Country[]): CountryOption[] =>
     country: c,
   }));
 
+// Custom filter for react-select
 const filterByCountryName = (
   option: { data: CountryOption },
   rawInput: string
@@ -56,6 +56,19 @@ const filterByCountryName = (
     country.callingCode.includes(input.replace(/^\+/, ""))
   );
 };
+
+// Toast wrapper around Swal.fire
+const toast = (opts: {
+  icon: "success" | "error" | "warning" | "info";
+  title: string;
+  text?: string;
+}) =>
+  Swal.fire({
+    ...opts,
+    showConfirmButton: false,
+    timer: 1000,
+    timerProgressBar: true,
+  });
 
 interface ForgotModalProps {
   role: Role;
@@ -70,9 +83,16 @@ function ForgotPasswordModal({ role, onClose }: ForgotModalProps) {
   const [confirmPwd, setConfirmPwd] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // 1) Send OTP
+  // Lock scrolling while loading
+  useEffect(() => {
+    document.body.style.overflow = loading ? "hidden" : "";
+  }, [loading]);
+
   const sendOtp = async () => {
-    if (!email) return Swal.fire("Error", "Email is required", "error");
+    if (!email) {
+      toast({ icon: "error", title: "Email is required" });
+      return;
+    }
     setLoading(true);
     try {
       const endpoint =
@@ -80,18 +100,23 @@ function ForgotPasswordModal({ role, onClose }: ForgotModalProps) {
           ? "/brand/forgot-password/send-otp"
           : "/influencer/forgot-password/send-otp";
       await post(endpoint, { email });
-      Swal.fire("Success", "OTP sent to your email", "success");
+      toast({ icon: "success", title: "OTP sent to your email" });
       setStep("otp");
     } catch (err: any) {
-      Swal.fire("Error", err.response?.data?.message || err.message, "error");
+      toast({
+        icon: "error",
+        title: err.response?.data?.message || err.message,
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  // 2) Verify OTP
   const verifyOtp = async () => {
-    if (!otp) return Swal.fire("Error", "OTP is required", "error");
+    if (!otp) {
+      toast({ icon: "error", title: "OTP is required" });
+      return;
+    }
     setLoading(true);
     try {
       const endpoint =
@@ -99,22 +124,27 @@ function ForgotPasswordModal({ role, onClose }: ForgotModalProps) {
           ? "/brand/forgot-password/verify-otp"
           : "/influencer/forgot-password/verify-otp";
       await post(endpoint, { email, otp });
-      Swal.fire("Success", "OTP verified", "success");
+      toast({ icon: "success", title: "OTP verified" });
       setStep("reset");
     } catch (err: any) {
-      Swal.fire("Error", err.response?.data?.message || err.message, "error");
+      toast({
+        icon: "error",
+        title: err.response?.data?.message || err.message,
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  // 3) Reset password
   const resetPassword = async () => {
-    if (!newPwd || !confirmPwd)
-      return Swal.fire("Error", "All fields are required", "error");
-    if (newPwd !== confirmPwd)
-      return Swal.fire("Error", "Passwords must match", "error");
-
+    if (!newPwd || !confirmPwd) {
+      toast({ icon: "error", title: "All fields are required" });
+      return;
+    }
+    if (newPwd !== confirmPwd) {
+      toast({ icon: "error", title: "Passwords must match" });
+      return;
+    }
     setLoading(true);
     try {
       const endpoint =
@@ -122,22 +152,27 @@ function ForgotPasswordModal({ role, onClose }: ForgotModalProps) {
           ? "/brand/forgot-password/reset"
           : "/influencer/forgot-password/reset";
       await post(endpoint, { email, otp, newPassword: newPwd });
-      Swal.fire("Success", "Password has been reset", "success");
+      toast({ icon: "success", title: "Password has been reset" });
       onClose();
     } catch (err: any) {
-      Swal.fire("Error", err.response?.data?.message || err.message, "error");
+      toast({
+        icon: "error",
+        title: err.response?.data?.message || err.message,
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 backdrop-filter backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
         {step === "email" && (
           <>
             <h3 className="text-xl font-semibold mb-4 text-center">
-              {role === "brand" ? "Brand Password Reset" : "Influencer Password Reset"}
+              {role === "brand"
+                ? "Brand Password Reset"
+                : "Influencer Password Reset"}
             </h3>
             <FloatingLabelInput
               id="forgotEmail"
@@ -165,7 +200,6 @@ function ForgotPasswordModal({ role, onClose }: ForgotModalProps) {
             </div>
           </>
         )}
-
         {step === "otp" && (
           <>
             <h3 className="text-xl font-semibold mb-4 text-center">
@@ -197,7 +231,6 @@ function ForgotPasswordModal({ role, onClose }: ForgotModalProps) {
             </div>
           </>
         )}
-
         {step === "reset" && (
           <>
             <h3 className="text-xl font-semibold mb-4 text-center">
@@ -242,161 +275,6 @@ function ForgotPasswordModal({ role, onClose }: ForgotModalProps) {
   );
 }
 
-export default function AuthPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("login");
-  const [role, setRole] = useState<Role>("brand");
-  const [countries, setCountries] = useState<Country[]>([]);
-  const [showForgot, setShowForgot] = useState(false);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await get<Country[]>("/country/getall");
-        setCountries(data);
-      } catch {
-        console.error("Failed to fetch countries");
-      }
-    })();
-  }, []);
-
-  const roleBtnClass = useCallback(
-    (current: Role) =>
-      `w-1/2 py-2 text-sm font-medium text-center transition border rounded-md ${role === current
-        ? "bg-[#ef2f5b] text-white border-[#ef2f5b]"
-        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-      }`,
-    [role]
-  );
-
-  const FormComponent = useMemo(() => {
-    if (activeTab === "login" && role === "brand")
-      return (props: LoginFormProps) => (
-        <BrandLoginForm {...props} onForgot={() => setShowForgot(true)} />
-      );
-    if (activeTab === "login" && role === "influencer")
-      return (props: LoginFormProps) => (
-        <InfluencerLoginForm {...props} onForgot={() => setShowForgot(true)} />
-      );
-    if (activeTab === "signup" && role === "brand")
-      return (p: SignupProps) => <BrandSignupForm {...p} countries={countries} />;
-    return (p: SignupProps) => (
-      <InfluencerSignupForm {...p} countries={countries} />
-    );
-  }, [activeTab, role, countries]);
-
-  return (
-    <div className="min-h-screen flex">
-      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-[#fff5f7] to-[#ffe8ed] flex-col justify-center px-16 h-screen sticky top-0">
-        {role === "brand" ? (
-          <>
-            <img
-              src="/brand.jpg"
-              alt="Brands uploading campaigns"
-              className="mb-8 w-full max-w-xl rounded-lg shadow-md"
-            />
-            <h1 className="text-4xl font-extrabold text-[#ef2f5b] mb-2">
-              Collabglam for Brands
-            </h1>
-            <p className="text-lg text-gray-700 mb-4">
-              Upload campaigns to boost brand awareness, drive growth, and increase sales.
-            </p>
-            <ul className="list-disc list-inside space-y-2 text-gray-600">
-              <li>📤 Create & publish targeted campaigns in minutes</li>
-              <li>🌟 Expand your reach with curated influencer matches</li>
-              <li>💰 Track ROI and conversions in real time</li>
-              <li>🔒 Manage all briefs, contracts, and payouts securely</li>
-            </ul>
-          </>
-        ) : (
-          <>
-            <img
-              src="/influencer.jpg"
-              alt="Influencers applying to campaigns"
-              className="mb-8 w-full max-w-xl rounded-lg shadow-md"
-            />
-            <h1 className="text-4xl font-extrabold text-[#ef2f5b] mb-2">
-              Collabglam for Influencers
-            </h1>
-            <p className="text-lg text-gray-700 mb-4">
-              Discover and apply to campaigns, then collaborate directly with brands—all in one place.
-            </p>
-            <ul className="list-disc list-inside space-y-2 text-gray-600">
-              <li>📝 Browse campaigns tailored to your niche</li>
-              <li>✉️ Send applications and negotiate terms instantly</li>
-              <li>💬 Message brands and coordinate details seamlessly</li>
-              <li>📊 Monitor your application status and earnings</li>
-            </ul>
-          </>
-        )}
-      </div>
-
-
-      <div className="flex w-full lg:w-1/2 items-center justify-center bg-white px-6 py-12">
-        <div className="w-full max-w-md space-y-6">
-          {/* Logo */}
-          <div className="flex items-center justify-center space-x-3 mb-6">
-            <img
-              src="/logo.png"
-              alt="Collabglam logo"
-              className="h-12"
-            />
-            <h1 className="text-2xl font-extrabold text-gray-800">
-              Collabglam
-            </h1>
-          </div>
-
-          {/* Tabs */}
-          <div className="flex mb-6 rounded-full overflow-hidden border border-gray-200">
-            {(["login", "signup"] as Tab[]).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`flex-1 py-2 text-sm font-medium transition ${activeTab === tab
-                  ? "bg-white text-[#ef2f5b]"
-                  : "bg-transparent text-gray-600 hover:text-[#ef2f5b]"
-                  }`}
-              >
-                {tab === "login" ? "Log In" : "Sign Up"}
-              </button>
-            ))}
-          </div>
-
-          {/* Dynamic Form */}
-          {/* For login, this will automatically receive onForgot via the memo’d wrapper;
-        for signup it will receive countries */}
-          <FormComponent
-            setActiveTab={setActiveTab}
-            countries={countries}
-            onForgot={() => setShowForgot(true)}
-          />
-
-          {/* Role Switch */}
-          <div className="flex space-x-4 mt-8">
-            <button
-              className={roleBtnClass("brand")}
-              onClick={() => setRole("brand")}
-            >
-              Continue with Brand
-            </button>
-            <button
-              className={roleBtnClass("influencer")}
-              onClick={() => setRole("influencer")}
-            >
-              Continue with Influencer
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Forgot Password Modal */}
-      {showForgot && <ForgotPasswordModal role={role} onClose={() => setShowForgot(false)} />}
-    </div>
-  );
-}
-
-/* -------------------------------------------------------------------------
-   LOGIN FORMS (unchanged)
-   ----------------------------------------------------------------------*/
 interface LoginFormProps {
   setActiveTab: (tab: Tab) => void;
   onForgot: () => void;
@@ -411,7 +289,11 @@ function BrandLoginForm({ setActiveTab, onForgot }: LoginFormProps) {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      return Swal.fire("Error", "Email and password are required", "error");
+      toast({
+        icon: "error",
+        title: "Email and password are required",
+      });
+      return;
     }
     setIsSubmitting(true);
     try {
@@ -421,10 +303,13 @@ function BrandLoginForm({ setActiveTab, onForgot }: LoginFormProps) {
       );
       localStorage.setItem("token", data.token);
       localStorage.setItem("brandId", data.brandId);
-      Swal.fire("Success", "Logged in", "success");
+      toast({ icon: "success", title: "Logged in" });
       router.push("/brand/dashboard");
     } catch (err: any) {
-      Swal.fire("Error", err.response?.data?.message || err.message, "error");
+      toast({
+        icon: "error",
+        title: err.response?.data?.message || err.message,
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -482,21 +367,29 @@ function InfluencerLoginForm({ setActiveTab, onForgot }: LoginFormProps) {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      return Swal.fire("Error", "Email and password are required", "error");
+      toast({
+        icon: "error",
+        title: "Email and password are required",
+      });
+      return;
     }
     setIsSubmitting(true);
     try {
-      const data = await post<{ token: string; influencerId: string; categoryId: string }>(
-        "/influencer/login",
-        { email, password }
-      );
+      const data = await post<{
+        token: string;
+        influencerId: string;
+        categoryId: string;
+      }>("/influencer/login", { email, password });
       localStorage.setItem("token", data.token);
       localStorage.setItem("influencerId", data.influencerId);
       localStorage.setItem("categoryId", data.categoryId);
-      Swal.fire("Success", "Logged in", "success");
+      toast({ icon: "success", title: "Logged in" });
       router.push("/influencer/dashboard");
     } catch (err: any) {
-      Swal.fire("Error", err.response?.data?.message || err.message, "error");
+      toast({
+        icon: "error",
+        title: err.response?.data?.message || err.message,
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -520,8 +413,8 @@ function InfluencerLoginForm({ setActiveTab, onForgot }: LoginFormProps) {
         label="Password"
         type="password"
         value={password}
-        className="mb-1"
         onChange={(e) => setPassword(e.target.value)}
+        className="mb-1"
         required
       />
       <div className="text-right">
@@ -545,9 +438,6 @@ function InfluencerLoginForm({ setActiveTab, onForgot }: LoginFormProps) {
   );
 }
 
-/* -------------------------------------------------------------------------
-   SIGN-UP FORMS WITH OTP FLOW
-   ----------------------------------------------------------------------*/
 interface SignupProps {
   setActiveTab: (tab: Tab) => void;
   countries: Country[];
@@ -565,15 +455,10 @@ function BrandSignupForm({ setActiveTab, countries }: SignupProps) {
   const [brandPhone, setBrandPhone] = useState("");
   const [brandPassword, setBrandPassword] = useState("");
   const [brandConfirmPwd, setBrandConfirmPwd] = useState("");
-  const [selectedCountry, setSelectedCountry] = useState<CountryOption | null>(
-    null
-  );
+  const [selectedCountry, setSelectedCountry] = useState<CountryOption | null>(null);
   const [selectedCode, setSelectedCode] = useState<CountryOption | null>(null);
 
-  const countryOptions = useMemo(
-    () => buildCountryOptions(countries),
-    [countries]
-  );
+  const countryOptions = useMemo(() => buildCountryOptions(countries), [countries]);
   const codeOptions = useMemo(
     () =>
       countries.map((c) => ({
@@ -586,15 +471,19 @@ function BrandSignupForm({ setActiveTab, countries }: SignupProps) {
 
   const sendOtp = async () => {
     if (!brandEmail) {
-      return Swal.fire("Error", "Email is required", "error");
+      toast({ icon: "error", title: "Email is required" });
+      return;
     }
     setIsSubmitting(true);
     try {
       await post("/auth/send-otp", { email: brandEmail });
-      Swal.fire("Success", "OTP sent to your email", "success");
+      toast({ icon: "success", title: "OTP sent to your email" });
       setStep("otp");
     } catch (err: any) {
-      Swal.fire("Error", err.response?.data?.message || err.message, "error");
+      toast({
+        icon: "error",
+        title: err.response?.data?.message || err.message,
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -602,15 +491,19 @@ function BrandSignupForm({ setActiveTab, countries }: SignupProps) {
 
   const verifyOtp = async () => {
     if (!otp) {
-      return Swal.fire("Error", "OTP is required", "error");
+      toast({ icon: "error", title: "OTP is required" });
+      return;
     }
     setIsVerifying(true);
     try {
       await post("/auth/verify-otp", { email: brandEmail, otp });
-      Swal.fire("Success", "Email verified", "success");
+      toast({ icon: "success", title: "Email verified" });
       setStep("form");
     } catch (err: any) {
-      Swal.fire("Error", err.response?.data?.message || err.message, "error");
+      toast({
+        icon: "error",
+        title: err.response?.data?.message || err.message,
+      });
     } finally {
       setIsVerifying(false);
     }
@@ -626,10 +519,12 @@ function BrandSignupForm({ setActiveTab, countries }: SignupProps) {
       !selectedCountry ||
       !selectedCode
     ) {
-      return Swal.fire("Error", "All fields are required", "error");
+      toast({ icon: "error", title: "All fields are required" });
+      return;
     }
     if (brandPassword !== brandConfirmPwd) {
-      return Swal.fire("Error", "Passwords must match", "error");
+      toast({ icon: "error", title: "Passwords must match" });
+      return;
     }
     setIsSubmitting(true);
     try {
@@ -641,163 +536,155 @@ function BrandSignupForm({ setActiveTab, countries }: SignupProps) {
         countryId: selectedCountry.country._id,
         callingId: selectedCode.country._id,
       });
-      Swal.fire("Success", "Brand signed up", "success");
+      toast({ icon: "success", title: "Brand signed up" });
       setActiveTab("login");
     } catch (err: any) {
-      Swal.fire("Error", err.response?.data?.message || err.message, "error");
+      toast({
+        icon: "error",
+        title: err.response?.data?.message || err.message,
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (step === "email") {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-semibold text-gray-800 text-center">Brand Sign Up</h2>
+        <FloatingLabelInput
+          id="brandEmail"
+          label="Email"
+          type="email"
+          value={brandEmail}
+          onChange={(e) => setBrandEmail(e.target.value)}
+          required
+        />
+        <Button
+          onClick={sendOtp}
+          variant="default"
+          className="w-full bg-[#ef2f5b] text-white"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Sending OTP…" : "Send OTP"}
+        </Button>
+      </div>
+    );
+  }
+
+  if (step === "otp") {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-semibold text-gray-800 text-center">Verify Your Email</h2>
+        <FloatingLabelInput
+          id="brandOtp"
+          label="OTP Code"
+          type="text"
+          value={otp}
+          onChange={(e) => setOtp(e.target.value)}
+          required
+        />
+        <Button
+          onClick={verifyOtp}
+          variant="default"
+          className="w-full bg-[#ef2f5b] text-white"
+          disabled={isVerifying}
+        >
+          {isVerifying ? "Verifying…" : "Verify OTP"}
+        </Button>
+      </div>
+    );
+  }
+
+  // step === "form"
   return (
-    <>
-      {step === "email" && (
-        <div className="space-y-6">
-          <h2 className="text-2xl font-semibold text-gray-800 text-center">
-            Brand Sign Up
-          </h2>
-          <FloatingLabelInput
-            id="brandEmail"
-            label="Email"
-            type="email"
-            value={brandEmail}
-            onChange={(e) => setBrandEmail(e.target.value)}
-            required
-          />
-          <Button
-            onClick={sendOtp}
-            variant="default"
-            className="w-full bg-[#ef2f5b] text-white"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Sending OTP…" : "Send OTP"}
-          </Button>
-        </div>
-      )}
-
-      {step === "otp" && (
-        <div className="space-y-6">
-          <h2 className="text-2xl font-semibold text-gray-800 text-center">
-            Verify Your Email
-          </h2>
-          <FloatingLabelInput
-            id="brandOtp"
-            label="OTP Code"
-            type="text"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            required
-          />
-          <Button
-            onClick={verifyOtp}
-            variant="default"
-            className="w-full bg-[#ef2f5b] text-white"
-            disabled={isVerifying}
-          >
-            {isVerifying ? "Verifying…" : "Verify OTP"}
-          </Button>
-        </div>
-      )}
-
-      {step === "form" && (
-        <form onSubmit={handleRegister} className="space-y-6">
-          <h2 className="text-2xl font-semibold text-gray-800 text-center">
-            Complete Brand Profile
-          </h2>
-          <FloatingLabelInput
-            id="brandName"
-            label="Brand Name"
-            type="text"
-            value={brandName}
-            onChange={(e) => setBrandName(e.target.value)}
-            required
-          />
-
-          <FloatingLabelInput
-            id="brandEmailDisabled"
-            label="Email"
-            type="email"
-            value={brandEmail}
-            disabled
-          />
-
-          <div className="grid sm:grid-cols-2 gap-6">
-            <div>
-              <Select
-                inputId="brandCode"
-                options={codeOptions}
-                placeholder="Code"
-                value={selectedCode}
-                onChange={(opt) => setSelectedCode(opt as CountryOption)}
-                filterOption={filterByCountryName}
-                styles={{
-                  control: (base) => ({
-                    ...base,
-                    backgroundColor: "#F9FAFB",
-                    borderColor: "#E5E7EB",
-                  }),
-                }}
-                required
-              />
-            </div>
-            <FloatingLabelInput
-              id="brandPhone"
-              label="Phone Number"
-              type="tel"
-              value={brandPhone}
-              onChange={(e) => setBrandPhone(e.target.value)}
-              required
-            />
-          </div>
-
-          <FloatingLabelInput
-            id="brandPassword"
-            label="Password"
-            type="password"
-            value={brandPassword}
-            onChange={(e) => setBrandPassword(e.target.value)}
-            required
-          />
-
-          <FloatingLabelInput
-            id="brandConfirmPwd"
-            label="Confirm Password"
-            type="password"
-            value={brandConfirmPwd}
-            onChange={(e) => setBrandConfirmPwd(e.target.value)}
-            required
-          />
-
-          <Select
-            inputId="brandCountry"
-            options={countryOptions}
-            placeholder="Select Country"
-            value={selectedCountry}
-            onChange={(opt) => setSelectedCountry(opt as CountryOption)}
-            filterOption={filterByCountryName}
-            styles={{
-              control: (base) => ({
-                ...base,
-                backgroundColor: "#F9FAFB",
-                borderColor: "#E5E7EB",
-              }),
-            }}
-            className="mt-4"
-            required
-          />
-
-          <Button
-            type="submit"
-            variant="default"
-            className="w-full bg-[#ef2f5b] text-white"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Signing Up…" : "Sign Up as Brand"}
-          </Button>
-        </form>
-      )}
-    </>
+    <form onSubmit={handleRegister} className="space-y-6">
+      <h2 className="text-2xl font-semibold text-gray-800 text-center">
+        Complete Brand Profile
+      </h2>
+      <FloatingLabelInput
+        id="brandName"
+        label="Brand Name"
+        type="text"
+        value={brandName}
+        onChange={(e) => setBrandName(e.target.value)}
+        required
+      />
+      <FloatingLabelInput
+        id="brandEmailDisabled"
+        label="Email"
+        type="email"
+        value={brandEmail}
+        disabled
+      />
+      <div className="grid sm:grid-cols-2 gap-6">
+        <Select
+          inputId="brandCode"
+          options={codeOptions}
+          placeholder="Code"
+          value={selectedCode}
+          onChange={(opt) => setSelectedCode(opt as CountryOption)}
+          filterOption={filterByCountryName}
+          styles={{
+            control: (base) => ({
+              ...base,
+              backgroundColor: "#F9FAFB",
+              borderColor: "#E5E7EB",
+            }),
+          }}
+          required
+        />
+        <FloatingLabelInput
+          id="brandPhone"
+          label="Phone Number"
+          type="tel"
+          value={brandPhone}
+          onChange={(e) => setBrandPhone(e.target.value)}
+          required
+        />
+      </div>
+      <FloatingLabelInput
+        id="brandPassword"
+        label="Password"
+        type="password"
+        value={brandPassword}
+        onChange={(e) => setBrandPassword(e.target.value)}
+        required
+      />
+      <FloatingLabelInput
+        id="brandConfirmPwd"
+        label="Confirm Password"
+        type="password"
+        value={brandConfirmPwd}
+        onChange={(e) => setBrandConfirmPwd(e.target.value)}
+        required
+      />
+      <Select
+        inputId="brandCountry"
+        options={countryOptions}
+        placeholder="Select Country"
+        value={selectedCountry}
+        onChange={(opt) => setSelectedCountry(opt as CountryOption)}
+        filterOption={filterByCountryName}
+        styles={{
+          control: (base) => ({
+            ...base,
+            backgroundColor: "#F9FAFB",
+            borderColor: "#E5E7EB",
+          }),
+        }}
+        className="mt-4"
+        required
+      />
+      <Button
+        type="submit"
+        variant="default"
+        className="w-full bg-[#ef2f5b] text-white"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? "Signing Up…" : "Sign Up as Brand"}
+      </Button>
+    </form>
   );
 }
 
@@ -814,37 +701,19 @@ function InfluencerSignupForm({ setActiveTab, countries }: SignupProps) {
   const [infPassword, setInfPassword] = useState("");
   const [infHandle, setInfHandle] = useState("");
   const [infBio, setInfBio] = useState("");
-  const [selectedCountry, setSelectedCountry] = useState<CountryOption | null>(
-    null
-  );
+  const [selectedCountry, setSelectedCountry] = useState<CountryOption | null>(null);
   const [selectedCode, setSelectedCode] = useState<CountryOption | null>(null);
-  const [interestOptions, setInterestOptions] = useState<Interest[]>([]);
-  const [audienceSizeOptions, setAudienceSizeOptions] = useState<
-    AudienceSizeOption[]
-  >([]);
-  const [selectedCategory, setSelectedCategory] = useState<any>(null);
-  const [selectedAudience, setSelectedAudience] = useState<any>(null);
-
-  interface Interest {
-    _id: string;
-    name: string;
-  }
-  interface AudienceSizeOption {
-    _id: string;
-    range: string;
-  }
+  const [interestOptions, setInterestOptions] = useState<{ _id: string; name: string }[]>([]);
+  const [audienceSizeOptions, setAudienceSizeOptions] = useState<{ _id: string; range: string }[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<{ value: string; label: string } | null>(null);
+  const [selectedAudience, setSelectedAudience] = useState<{ value: string; label: string } | null>(null);
 
   useEffect(() => {
-    get<Interest[]>("/interest/getlist").then(setInterestOptions);
-    get<AudienceSizeOption[]>("/audience/getlist").then(
-      setAudienceSizeOptions
-    );
+    get<{ _id: string; name: string }[]>("/interest/getlist").then(setInterestOptions);
+    get<{ _id: string; range: string }[]>("/audience/getlist").then(setAudienceSizeOptions);
   }, []);
 
-  const countryOptions = useMemo(
-    () => buildCountryOptions(countries),
-    [countries]
-  );
+  const countryOptions = useMemo(() => buildCountryOptions(countries), [countries]);
   const codeOptions = useMemo(
     () =>
       countries.map((c) => ({
@@ -857,34 +726,42 @@ function InfluencerSignupForm({ setActiveTab, countries }: SignupProps) {
 
   const sendOtp = async () => {
     if (!infEmail) {
-      return Swal.fire("Error", "Email is required", "error");
+      toast({ icon: "error", title: "Email is required" });
+      return;
     }
     setIsSubmitting(true);
-    setStep("otp");
-    // try {
-    //   await post("/auth/send-otp", { email: infEmail });
-    //   Swal.fire("Success", "OTP sent to your email", "success");
-    // } catch (err: any) {
-    //   Swal.fire("Error", err.response?.data?.message || err.message, "error");
-    // } finally {
-    //   setIsSubmitting(false);
-    // }
+    try {
+      await post("/auth/send-otp", { email: infEmail });
+      toast({ icon: "success", title: "OTP sent to your email" });
+      setStep("otp");
+    } catch (err: any) {
+      toast({
+        icon: "error",
+        title: err.response?.data?.message || err.message,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const verifyOtp = async () => {
     if (!otp) {
-      return Swal.fire("Error", "OTP is required", "error");
+      toast({ icon: "error", title: "OTP is required" });
+      return;
     }
     setIsVerifying(true);
-    setStep("form");
-    // try {
-    //   await post("/auth/verify-otp", { email: infEmail, otp });
-    //   Swal.fire("Success", "Email verified", "success");
-    // } catch (err: any) {
-    //   Swal.fire("Error", err.response?.data?.message || err.message, "error");
-    // } finally {
-    //   setIsVerifying(false);
-    // }
+    try {
+      await post("/auth/verify-otp", { email: infEmail, otp });
+      toast({ icon: "success", title: "Email verified" });
+      setStep("form");
+    } catch (err: any) {
+      toast({
+        icon: "error",
+        title: err.response?.data?.message || err.message,
+      });
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   const handleRegister = async (e: FormEvent) => {
@@ -900,7 +777,8 @@ function InfluencerSignupForm({ setActiveTab, countries }: SignupProps) {
       !selectedCategory ||
       !selectedAudience
     ) {
-      return Swal.fire("Error", "All fields are required", "error");
+      toast({ icon: "error", title: "All fields are required" });
+      return;
     }
     setIsSubmitting(true);
     try {
@@ -916,206 +794,364 @@ function InfluencerSignupForm({ setActiveTab, countries }: SignupProps) {
         countryId: selectedCountry.country._id,
         callingId: selectedCode.country._id,
       });
-      Swal.fire("Success", "Influencer signed up", "success");
+      toast({ icon: "success", title: "Influencer signed up" });
       setActiveTab("login");
     } catch (err: any) {
-      Swal.fire("Error", err.response?.data?.message || err.message, "error");
+      toast({
+        icon: "error",
+        title: err.response?.data?.message || err.message,
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (step === "email") {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-semibold text-gray-800 text-center">
+          Influencer Sign Up
+        </h2>
+        <FloatingLabelInput
+          id="infEmail"
+          label="Email"
+          type="email"
+          value={infEmail}
+          onChange={(e) => setInfEmail(e.target.value)}
+          required
+        />
+        <Button
+          onClick={sendOtp}
+          variant="default"
+          className="w-full bg-[#ef2f5b] text-white"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Sending OTP…" : "Send OTP"}
+        </Button>
+      </div>
+    );
+  }
+
+  if (step === "otp") {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-semibold text-gray-800 text-center">
+          Verify Your Email
+        </h2>
+        <FloatingLabelInput
+          id="infOtp"
+          label="OTP Code"
+          type="text"
+          value={otp}
+          onChange={(e) => setOtp(e.target.value)}
+          required
+        />
+        <Button
+          onClick={verifyOtp}
+          variant="default"
+          className="w-full bg-[#ef2f5b] text-white"
+          disabled={isVerifying}
+        >
+          {isVerifying ? "Verifying…" : "Verify OTP"}
+        </Button>
+      </div>
+    );
+  }
+
+  // step === "form"
+  return (
+    <form onSubmit={handleRegister} className="space-y-6">
+      <h2 className="text-2xl font-semibold text-gray-800 text-center">
+        Complete Influencer Profile
+      </h2>
+      <FloatingLabelInput
+        id="infName"
+        label="Name"
+        type="text"
+        value={infName}
+        onChange={(e) => setInfName(e.target.value)}
+        required
+      />
+      <FloatingLabelInput
+        id="infEmailDisabled"
+        label="Email"
+        type="email"
+        value={infEmail}
+        disabled
+      />
+      <div className="grid sm:grid-cols-2 gap-6">
+        <Select
+          inputId="infCode"
+          options={codeOptions}
+          placeholder="Code"
+          value={selectedCode}
+          onChange={(opt) => setSelectedCode(opt as CountryOption)}
+          filterOption={filterByCountryName}
+          styles={{
+            control: (base) => ({
+              ...base,
+              backgroundColor: "#F9FAFB",
+              borderColor: "#E5E7EB",
+            }),
+          }}
+          required
+        />
+        <FloatingLabelInput
+          id="infPhone"
+          label="Phone Number"
+          type="tel"
+          value={infPhone}
+          onChange={(e) => setInfPhone(e.target.value)}
+          required
+        />
+      </div>
+      <FloatingLabelInput
+        id="infPassword"
+        label="Password"
+        type="password"
+        value={infPassword}
+        onChange={(e) => setInfPassword(e.target.value)}
+        required
+      />
+      <FloatingLabelInput
+        id="infHandle"
+        label="Social Media Handle"
+        type="text"
+        value={infHandle}
+        onChange={(e) => setInfHandle(e.target.value)}
+        required
+      />
+      <Select
+        inputId="infCategory"
+        options={interestOptions.map((i) => ({
+          value: i._id,
+          label: i.name,
+        }))}
+        placeholder="Select Category"
+        value={selectedCategory}
+        onChange={(opt) => setSelectedCategory(opt as any)}
+        styles={{
+          control: (base) => ({
+            ...base,
+            backgroundColor: "#F9FAFB",
+            borderColor: "#E5E7EB",
+          }),
+        }}
+        required
+      />
+      <Select
+        inputId="infAudience"
+        options={audienceSizeOptions.map((a) => ({
+          value: a._id,
+          label: a.range,
+        }))}
+        placeholder="Select Audience Size"
+        value={selectedAudience}
+        onChange={(opt) => setSelectedAudience(opt as any)}
+        styles={{
+          control: (base) => ({
+            ...base,
+            backgroundColor: "#F9FAFB",
+            borderColor: "#E5E7EB",
+          }),
+        }}
+        required
+      />
+      <Select
+        inputId="infCountry"
+        options={countryOptions}
+        placeholder="Select Country"
+        value={selectedCountry}
+        onChange={(opt) => setSelectedCountry(opt as CountryOption)}
+        filterOption={filterByCountryName}
+        styles={{
+          control: (base) => ({
+            ...base,
+            backgroundColor: "#F9FAFB",
+            borderColor: "#E5E7EB",
+          }),
+        }}
+        required
+      />
+      <FloatingLabelInput
+        id="infBio"
+        label="Short Bio"
+        type="text"
+        value={infBio}
+        onChange={(e) => setInfBio(e.target.value)}
+        required
+      />
+      <Button
+        type="submit"
+        variant="default"
+        className="w-full bg-[#ef2f5b] text-white"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? "Signing Up…" : "Sign Up as Influencer"}
+      </Button>
+    </form>
+  );
+}
+
+export default function AuthPage() {
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<Tab>("login");
+  const [role, setRole] = useState<Role>("brand");
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [showForgot, setShowForgot] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await get<Country[]>("/country/getall");
+        setCountries(data);
+      } catch {
+        console.error("Failed to fetch countries");
+      }
+    })();
+  }, []);
+
+  const roleBtnClass = useCallback(
+    (current: Role) =>
+      `w-1/2 py-2 text-sm font-medium text-center transition border rounded-md ${role === current
+        ? "bg-[#ef2f5b] text-white border-[#ef2f5b]"
+        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+      }`,
+    [role]
+  );
+
+  const FormComponent = useMemo(() => {
+    if (activeTab === "login" && role === "brand")
+      return (props: LoginFormProps) => (
+        <BrandLoginForm {...props} onForgot={() => setShowForgot(true)} />
+      );
+    if (activeTab === "login" && role === "influencer")
+      return (props: LoginFormProps) => (
+        <InfluencerLoginForm {...props} onForgot={() => setShowForgot(true)} />
+      );
+    if (activeTab === "signup" && role === "brand")
+      return (p: SignupProps) => <BrandSignupForm {...p} countries={countries} />;
+    return (p: SignupProps) => (
+      <InfluencerSignupForm {...p} countries={countries} />
+    );
+  }, [activeTab, role, countries]);
+
   return (
     <>
-      {step === "email" && (
-        <div className="space-y-6">
-          <h2 className="text-2xl font-semibold text-gray-800 text-center">
-            Influencer Sign Up
-          </h2>
-          <FloatingLabelInput
-            id="infEmail"
-            label="Email"
-            type="email"
-            value={infEmail}
-            onChange={(e) => setInfEmail(e.target.value)}
-            required
+      {/* Topbar */}
+      <header className="fixed top-0 inset-x-0 bg-white shadow-md py-3 px-6 z-50">
+        <div
+          className="flex items-center max-w-6xl mx-auto cursor-pointer"
+          onClick={() => router.push("/")}
+        >
+          <img
+            src="/logo.png"
+            alt="CollabGlam logo"
+            className="h-8 w-auto"
           />
-          <Button
-            onClick={sendOtp}
-            variant="default"
-            className="w-full bg-[#ef2f5b] text-white"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Sending OTP…" : "Send OTP"}
-          </Button>
+          <span className="ml-3 text-xl font-bold text-gray-800">
+            CollabGlam
+          </span>
         </div>
-      )}
+      </header>
 
-      {step === "otp" && (
-        <div className="space-y-6">
-          <h2 className="text-2xl font-semibold text-gray-800 text-center">
-            Verify Your Email
-          </h2>
-          <FloatingLabelInput
-            id="infOtp"
-            label="OTP Code"
-            type="text"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            required
-          />
-          <Button
-            onClick={verifyOtp}
-            variant="default"
-            className="w-full bg-[#ef2f5b] text-white"
-            disabled={isVerifying}
-          >
-            {isVerifying ? "Verifying…" : "Verify OTP"}
-          </Button>
-        </div>
-      )}
 
-      {step === "form" && (
-        <form onSubmit={handleRegister} className="space-y-6">
-          <h2 className="text-2xl font-semibold text-gray-800 text-center">
-            Complete Influencer Profile
-          </h2>
-          <FloatingLabelInput
-            id="infName"
-            label="Name"
-            type="text"
-            value={infName}
-            onChange={(e) => setInfName(e.target.value)}
-            required
-          />
-
-          <FloatingLabelInput
-            id="infEmailDisabled"
-            label="Email"
-            type="email"
-            value={infEmail}
-            disabled
-          />
-
-          <div className="grid sm:grid-cols-2 gap-6">
-            <div>
-              <Select
-                inputId="infCode"
-                options={codeOptions}
-                placeholder="Code"
-                value={selectedCode}
-                onChange={(opt) => setSelectedCode(opt as CountryOption)}
-                filterOption={filterByCountryName}
-                styles={{
-                  control: (base) => ({
-                    ...base,
-                    backgroundColor: "#F9FAFB",
-                    borderColor: "#E5E7EB",
-                  }),
-                }}
-                required
+      <div className="max-h-screen flex pt-12">
+        {/* Left graphic panel (only on lg+) */}
+        <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-[#fff5f7] to-[#ffe8ed] flex-col justify-center px-16 h-screen sticky top-12">
+          {role === "brand" ? (
+            <>
+              <img
+                src="/brand.jpg"
+                alt="Brands uploading campaigns"
+                className="mb-8 w-full max-w-xl rounded-lg shadow-md"
               />
+              <h1 className="text-4xl font-extrabold text-[#ef2f5b] mb-2">
+                Collabglam for Brands
+              </h1>
+              <p className="text-lg text-gray-700 mb-4">
+                Upload campaigns to boost brand awareness, drive growth, and increase sales.
+              </p>
+              <ul className="list-disc list-inside space-y-2 text-gray-600">
+                <li>📤 Create & publish targeted campaigns in minutes</li>
+                <li>🌟 Expand your reach with curated influencer matches</li>
+                <li>💰 Track ROI and conversions in real time</li>
+                <li>🔒 Manage all briefs, contracts, and payouts securely</li>
+              </ul>
+            </>
+          ) : (
+            <>
+              <img
+                src="/influencer.jpg"
+                alt="Influencers applying to campaigns"
+                className="mb-8 w-full max-w-xl rounded-lg shadow-md"
+              />
+              <h1 className="text-4xl font-extrabold text-[#ef2f5b] mb-2">
+                Collabglam for Influencers
+              </h1>
+              <p className="text-lg text-gray-700 mb-4">
+                Discover and apply to campaigns, then collaborate directly with brands—all in one place.
+              </p>
+              <ul className="list-disc list-inside space-y-2 text-gray-600">
+                <li>📝 Browse campaigns tailored to your niche</li>
+                <li>✉️ Send applications and negotiate terms instantly</li>
+                <li>💬 Message brands and coordinate details seamlessly</li>
+                <li>📊 Monitor your application status and earnings</li>
+              </ul>
+            </>
+          )}
+        </div>
+
+        {/* Auth form panel */}
+        <div className="flex w-full lg:w-1/2 items-center justify-center bg-white px-6 py-12">
+          <div className="w-full max-w-md space-y-6">
+            {/* Logo */}
+            <div className="flex items-center justify-center space-x-3 mb-6">
+              <img src="/logo.png" alt="Collabglam logo" className="h-12" />
+              <h1 className="text-2xl font-extrabold text-gray-800">Collabglam</h1>
             </div>
-            <FloatingLabelInput
-              id="infPhone"
-              label="Phone Number"
-              type="tel"
-              value={infPhone}
-              onChange={(e) => setInfPhone(e.target.value)}
-              required
+
+            {/* Tabs */}
+            <div className="flex mb-6 rounded-full overflow-hidden border border-gray-200">
+              {(["login", "signup"] as Tab[]).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`flex-1 py-2 text-sm font-medium transition ${activeTab === tab
+                      ? "bg-white text-[#ef2f5b]"
+                      : "bg-transparent text-gray-600 hover:text-[#ef2f5b]"
+                    }`}
+                >
+                  {tab === "login" ? "Log In" : "Sign Up"}
+                </button>
+              ))}
+            </div>
+
+            {/* Dynamic Form */}
+            <FormComponent
+              setActiveTab={setActiveTab}
+              countries={countries}
+              onForgot={() => setShowForgot(true)}
             />
+
+            {/* Role Switch */}
+            <div className="flex space-x-4 mt-8">
+              <button className={roleBtnClass("brand")} onClick={() => setRole("brand")}>
+                Continue with Brand
+              </button>
+              <button
+                className={roleBtnClass("influencer")}
+                onClick={() => setRole("influencer")}
+              >
+                Continue with Influencer
+              </button>
+            </div>
           </div>
-          <FloatingLabelInput
-            id="infPassword"
-            label="Password"
-            type="password"
-            value={infPassword}
-            onChange={(e) => setInfPassword(e.target.value)}
-            required
-          />
-          <FloatingLabelInput
-            id="infHandle"
-            label="Social Media Handle"
-            type="text"
-            value={infHandle}
-            onChange={(e) => setInfHandle(e.target.value)}
-            required
-          />
+        </div>
 
-          <Select
-            inputId="infCategory"
-            options={interestOptions.map((i) => ({
-              value: i._id,
-              label: i.name,
-            }))}
-            placeholder="Select Category"
-            value={selectedCategory}
-            onChange={(opt) => setSelectedCategory(opt as any)}
-            styles={{
-              control: (base) => ({
-                ...base,
-                backgroundColor: "#F9FAFB",
-                borderColor: "#E5E7EB",
-              }),
-            }}
-            className="mt-4"
-            required
-          />
-          <Select
-            inputId="infAudience"
-            options={audienceSizeOptions.map((a) => ({
-              value: a._id,
-              label: a.range,
-            }))}
-            placeholder="Select Audience Size"
-            value={selectedAudience}
-            onChange={(opt) => setSelectedAudience(opt as any)}
-            styles={{
-              control: (base) => ({
-                ...base,
-                backgroundColor: "#F9FAFB",
-                borderColor: "#E5E7EB",
-              }),
-            }}
-            className="mt-4"
-            required
-          />
-          <Select
-            inputId="infCountry"
-            options={countryOptions}
-            placeholder="Select Country"
-            value={selectedCountry}
-            onChange={(opt) => setSelectedCountry(opt as CountryOption)}
-            filterOption={filterByCountryName}
-            styles={{
-              control: (base) => ({
-                ...base,
-                backgroundColor: "#F9FAFB",
-                borderColor: "#E5E7EB",
-              }),
-            }}
-            className="mt-4"
-            required
-          />
-          <FloatingLabelInput
-            id="infBio"
-            label="Short Bio"
-            type="text"
-            value={infBio}
-            onChange={(e) => setInfBio(e.target.value)}
-            required
-          />
-
-          <Button
-            type="submit"
-            variant="default"
-            className="w-full bg-[#ef2f5b] text-white"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Signing Up…" : "Sign Up as Influencer"}
-          </Button>
-        </form>
-      )}
+        {/* Forgot Password Modal */}
+        {showForgot && <ForgotPasswordModal role={role} onClose={() => setShowForgot(false)} />}
+      </div>
     </>
   );
 }

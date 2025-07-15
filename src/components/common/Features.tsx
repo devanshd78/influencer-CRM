@@ -11,7 +11,7 @@ const Features = () => (
           Powerful Features
         </h2>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          Everything you need to monetise and scale
+          Everything you need to grow and scale
         </p>
       </div>
 

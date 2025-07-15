@@ -6,7 +6,7 @@ import { HiCheckCircle, HiXCircle, HiCreditCard, HiCheck, HiX } from "react-icon
 
 interface Feature { key: string; value: number }
 interface Plan { planId: string; name: string; monthlyCost: number; features: Feature[]; featured?: boolean }
-interface BrandData { subscription: { name: string; expiresAt: string } }
+interface BrandData { subscription: { planName: string; expiresAt: string } }
 
 type PaymentStatus = "idle" | "processing" | "success" | "failed";
 
@@ -42,7 +42,7 @@ export default function BrandSubscriptionPage() {
         const id = localStorage.getItem("brandId");
         if (id) {
           const { subscription } = await get<BrandData>(`/brand?id=${id}`);
-          setCurrentPlan(subscription.name);
+          setCurrentPlan(subscription.planName);
           setExpiresAt(subscription.expiresAt);
         }
       } catch (e) {
@@ -136,7 +136,7 @@ export default function BrandSubscriptionPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex justify-center items-center h-64 bg-white rounded-lg shadow-lg">
         <HiCreditCard className="animate-spin text-4xl text-pink-600" />
         <span className="ml-3">Loading plans…</span>
       </div>
@@ -144,8 +144,8 @@ export default function BrandSubscriptionPage() {
   }
 
   return (
-    <section className="py-12 bg-gradient-to-b from-white to-gray-100">
-      <div className="max-w-7xl mx-auto px-6">
+    <section className="py-12">
+      <div className="max-w-7xl mx-auto px-6 bg-white rounded-lg shadow-lg p-8">
         <h2 className="text-4xl font-extrabold text-center text-gray-900 mb-4">
           Choose Your Subscription
         </h2>

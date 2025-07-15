@@ -30,14 +30,13 @@ const menuItems: MenuItem[] = [
   { name: "Previous Campaigns", href: "/brand/prev-campaign", icon: HiClipboardList },
   { name: "Browse Influencers", href: "/brand/browse-influencers", icon: HiUsers },
   { name: "Messages", href: "/brand/messages", icon: SendIcon },
-  { name: "Settings", href: "/brand/settings", icon: HiCog },
+  { name: "My Subscriptions", href: "/brand/subscriptions", icon: HiClipboardList },
 ];
 
 interface BrandSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-
-     }
+}
 
 export default function BrandSidebar({ isOpen, onClose }: BrandSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
@@ -59,7 +58,7 @@ export default function BrandSidebar({ isOpen, onClose }: BrandSidebarProps) {
         ? "bg-pink-100 text-pink-600"
         : "text-gray-800 hover:bg-pink-50 hover:text-pink-600";
       const newClasses = isNew
-        ? "font-bold bg-gradient-to-r from-[#EF2F5B] to-[#FFD1E0] text-gray-800 shadow-md"
+        ? "font-bold bg-[#EF2F5B]/80 text-white shadow-md"
         : "";
 
       return (
@@ -72,9 +71,8 @@ export default function BrandSidebar({ isOpen, onClose }: BrandSidebarProps) {
           >
             <item.icon
               size={20}
-              className={`flex-shrink-0 ${
-                isActive ? "text-pink-600" : "text-gray-400 group-hover:text-pink-600"
-              }`}
+              className={`flex-shrink-0 ${isActive ? "text-pink-600" : "text-gray-400 group-hover:text-pink-600"
+                }`}
             />
             {!collapsed && <span className="ml-3 text-md font-medium">{item.name}</span>}
           </Link>
@@ -84,9 +82,8 @@ export default function BrandSidebar({ isOpen, onClose }: BrandSidebarProps) {
 
   const sidebarContent = (
     <div
-      className={`flex flex-col h-full bg-white text-gray-800 ${
-        collapsed ? "w-16" : "w-64"
-      } transition-width duration-300 ease-in-out`}
+      className={`flex flex-col h-full bg-white text-gray-800 ${collapsed ? "w-16" : "w-64"
+        } transition-width duration-300 ease-in-out`}
     >
       {/* Header */}
       <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
