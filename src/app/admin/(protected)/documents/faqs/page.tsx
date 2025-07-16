@@ -22,19 +22,18 @@ export default function AdminFAQPage() {
     const router = useRouter();
 
     // Load all FAQs
-    useEffect(() => {
-        (async () => {
-            try {
-                const data = await get<FAQ[]>('/faqs/get');
-                setFaqs(data);
-            } catch (err) {
-                console.error(err);
-                Swal.fire({ icon: 'error', title: 'Load Failed', text: 'Unable to load FAQs.', timer: 1500, timerProgressBar: true, showConfirmButton: false });
-            } finally {
-                setLoading(false);
-            }
-        })();
-    }, []);
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await post<FAQ[]>('/faqs/get');
+        setFaqs(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
     // When a FAQ is selected
     const handleSelect = (id: string) => {
@@ -110,7 +109,7 @@ export default function AdminFAQPage() {
                         value={selectedId}
                         onChange={(e) => handleSelect(e.target.value)}
                         disabled={saving}
-                        className="flex-1 border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        className="flex-1 border rounded p-2 focus:outline-none focus:ring-2 focus:ring-pink-400"
                     >
                         <option value="">-- New FAQ --</option>
                         {faqs.map(f => (
@@ -122,7 +121,7 @@ export default function AdminFAQPage() {
                     <button
                         onClick={handleNew}
                         disabled={saving}
-                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                        className="px-4 py-2 bg-[#ef2f5b] text-white rounded hover:bg-[#ef2f5b]/80 disabled:opacity-50"
                     >
                         New
                     </button>
@@ -137,7 +136,7 @@ export default function AdminFAQPage() {
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
                     disabled={saving}
-                    className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-pink-400"
                 />
             </div>
 
@@ -149,7 +148,7 @@ export default function AdminFAQPage() {
                     value={answer}
                     onChange={(e) => setAnswer(e.target.value)}
                     disabled={saving}
-                    className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-pink-400"
                 />
             </div>
 
@@ -157,7 +156,7 @@ export default function AdminFAQPage() {
                 <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 transition"
+                    className="px-6 py-2 bg-[#ef2f5b] text-white rounded hover:bg-[#ef2f5b]/80 disabled:opacity-50 transition"
                 >
                     {selectedId ? (saving ? 'Saving...' : 'Update') : (saving ? 'Saving...' : 'Create')}
                 </button>

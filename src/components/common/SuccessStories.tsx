@@ -86,14 +86,21 @@ const SuccessStories = () => {
                   <h3 className="text-2xl font-bold text-gray-900">
                     {currentStoryData.name}
                   </h3>
-                  <p className="text-[#ef2f5b] font-semibold">
-                    {currentStoryData.role}
-                  </p>
+<p
+  className="
+    font-semibold
+    bg-gradient-to-r from-[#FFA135] to-[#FF7236]
+    bg-clip-text text-transparent
+  "
+>
+  {currentStoryData.role}
+</p>
+
                 </div>
               </div>
 
               <div className="relative mb-6">
-                <Quote className="absolute -top-2 -left-2 h-8 w-8 text-[#ef2f5b] opacity-30" />
+                <Quote className="absolute -top-2 -left-2 h-8 w-8 text-[#FF7236] opacity-30" />
                 <blockquote className="text-lg text-gray-700 italic pl-6">
                   "{currentStoryData.quote}"
                 </blockquote>
@@ -103,7 +110,7 @@ const SuccessStories = () => {
               <div className="space-y-3 mb-6">
                 {currentStoryData.results.map((result, index) => (
                   <div key={index} className="flex items-center">
-                    <div className="w-2 h-2 bg-[#ef2f5b] rounded-full mr-3"></div>
+                    <div className="w-2 h-2 bg-[#FF7236] rounded-full mr-3"></div>
                     <span className="text-gray-700">{result}</span>
                   </div>
                 ))}

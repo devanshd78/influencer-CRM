@@ -28,7 +28,7 @@ const navItems = [
 ];
 
 const documentLinks = [
-  { label: "Contact", href: "/admin/documents/contact-us" },
+  { label: "Contact US Page Email", href: "/admin/documents/contact-us" },
   { label: "FAQs", href: "/admin/documents/faqs" },
   { label: "Privacy Policy", href: "/admin/documents/privacy-policy" },
   { label: "Terms of Service", href: "/admin/documents/terms-of-service" },
@@ -39,10 +39,17 @@ const documentLinks = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [docsOpen, setDocsOpen] = useState(false);
 
-  // Prevent scroll when drawer is open
+  const initialDocsOpen = pathname.startsWith("/admin/documents/");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [docsOpen, setDocsOpen] = useState(initialDocsOpen);
+
+  useEffect(() => {
+    if (pathname.startsWith("/admin/documents/")) {
+      setDocsOpen(true);
+    }
+  }, [pathname]);
+
   useEffect(() => {
     document.body.style.overflow = drawerOpen ? "hidden" : "";
   }, [drawerOpen]);
@@ -61,14 +68,14 @@ export default function AdminSidebar() {
         onClick={onClick}
         className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors focus:outline-none ${
           active
-            ? "bg-blue-50 text-blue-600"
+            ? "bg-[#ef2f5b]/20 text-[#ef2f5b]"
             : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
         }`}
       >
         {Icon && (
           <Icon
             className={`mr-3 h-5 w-5 transition-colors ${
-              active ? "text-blue-600" : "text-gray-400 hover:text-gray-500"
+              active ? "text-[#ef2f5b]" : "text-gray-400 hover:text-gray-500"
             }`}
           />
         )}
@@ -80,7 +87,7 @@ export default function AdminSidebar() {
   const renderDocuments = (isMobile = false) => (
     <div>
       <button
-        onClick={() => setDocsOpen(prev => !prev)}
+        onClick={() => setDocsOpen((prev) => !prev)}
         className="flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none"
       >
         <FileText className="mr-3 h-5 w-5 text-gray-400 hover:text-gray-500" />
@@ -110,7 +117,7 @@ export default function AdminSidebar() {
                   }}
                   className={`block px-3 py-1 text-sm rounded-lg transition-colors focus:outline-none ${
                     active
-                      ? "bg-blue-50 text-blue-600"
+                      ? "bg-[#ef2f5b]/20 text-[#ef2f5b]"
                       : "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
                   }`}
                 >
@@ -131,7 +138,7 @@ export default function AdminSidebar() {
         <button
           onClick={() => setDrawerOpen(true)}
           aria-label="Open menu"
-          className="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#ef2f5b]"
         >
           <Menu className="h-6 w-6 text-gray-700" />
         </button>
@@ -151,7 +158,7 @@ export default function AdminSidebar() {
           <span className="text-xl font-semibold">CollabGlam</span>
         </Link>
         <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-1">
-          {navItems.map(item => renderLink(item))}
+          {navItems.map((item) => renderLink(item))}
           {renderDocuments(false)}
         </nav>
       </aside>
@@ -160,7 +167,6 @@ export default function AdminSidebar() {
       <AnimatePresence>
         {drawerOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
               initial={{ opacity: 0 }}
@@ -169,7 +175,6 @@ export default function AdminSidebar() {
               onClick={() => setDrawerOpen(false)}
             />
 
-            {/* Drawer Panel */}
             <motion.aside
               className="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r flex flex-col"
               initial="hidden"
@@ -186,13 +191,15 @@ export default function AdminSidebar() {
                 <button
                   onClick={() => setDrawerOpen(false)}
                   aria-label="Close menu"
-                  className="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#ef2f5b]"
                 >
                   <X className="h-6 w-6 text-gray-700" />
                 </button>
               </div>
               <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1">
-                {navItems.map(item => renderLink(item, () => setDrawerOpen(false)))}
+                {navItems.map((item) =>
+                  renderLink(item, () => setDrawerOpen(false))
+                )}
                 {renderDocuments(true)}
               </nav>
             </motion.aside>

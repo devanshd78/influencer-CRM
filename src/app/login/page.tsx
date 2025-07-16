@@ -17,7 +17,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { FloatingLabelInput } from "@/components/common/FloatingLabelInput";
 
-
 type Tab = "login" | "signup";
 type Role = "brand" | "influencer";
 
@@ -35,7 +34,6 @@ interface CountryOption {
   country: Country;
 }
 
-// Build react-select options
 const buildCountryOptions = (countries: Country[]): CountryOption[] =>
   countries.map((c) => ({
     value: c.countryCode,
@@ -43,7 +41,6 @@ const buildCountryOptions = (countries: Country[]): CountryOption[] =>
     country: c,
   }));
 
-// Custom filter for react-select
 const filterByCountryName = (
   option: { data: CountryOption },
   rawInput: string
@@ -57,7 +54,6 @@ const filterByCountryName = (
   );
 };
 
-// Toast wrapper around Swal.fire
 const toast = (opts: {
   icon: "success" | "error" | "warning" | "info";
   title: string;
@@ -68,7 +64,22 @@ const toast = (opts: {
     showConfirmButton: false,
     timer: 1000,
     timerProgressBar: true,
+
+    background: "white",
+    customClass: {
+      popup: `
+        text-gray-900
+        rounded-lg
+      `,
+      icon: `
+        bg-gradient-to-r from-[#FFA135] to-[#FF7236]
+        text-transparent
+        bg-clip-text
+      `,
+    },
   });
+
+
 
 interface ForgotModalProps {
   role: Role;
@@ -83,7 +94,6 @@ function ForgotPasswordModal({ role, onClose }: ForgotModalProps) {
   const [confirmPwd, setConfirmPwd] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Lock scrolling while loading
   useEffect(() => {
     document.body.style.overflow = loading ? "hidden" : "";
   }, [loading]);
@@ -192,7 +202,14 @@ function ForgotPasswordModal({ role, onClose }: ForgotModalProps) {
               </button>
               <button
                 onClick={sendOtp}
-                className="px-4 py-2 rounded-md bg-[#ef2f5b] text-white hover:bg-[#d72a52]"
+                className="
+                  px-4 py-2 rounded-md
+                  bg-gradient-to-r from-[#FFA135] to-[#FF7236]
+                  text-white font-bold text-lg
+                  transition-all duration-200 transform
+                  hover:bg-gradient-to-r hover:from-[#FF8C1A] hover:to-[#FF5C1E]
+                  hover:scale-105
+                "
                 disabled={loading}
               >
                 {loading ? "Sending…" : "Send OTP"}
@@ -223,7 +240,14 @@ function ForgotPasswordModal({ role, onClose }: ForgotModalProps) {
               </button>
               <button
                 onClick={verifyOtp}
-                className="px-4 py-2 rounded-md bg-[#ef2f5b] text-white hover:bg-[#d72a52]"
+                className="
+                  px-4 py-2 rounded-md
+                  bg-gradient-to-r from-[#FFA135] to-[#FF7236]
+                  text-white font-bold text-lg
+                  transition-all duration-200 transform
+                  hover:bg-gradient-to-r hover:from-[#FF8C1A] hover:to-[#FF5C1E]
+                  hover:scale-105
+                "
                 disabled={loading}
               >
                 {loading ? "Verifying…" : "Verify OTP"}
@@ -262,7 +286,14 @@ function ForgotPasswordModal({ role, onClose }: ForgotModalProps) {
               </button>
               <button
                 onClick={resetPassword}
-                className="px-4 py-2 rounded-md bg-[#ef2f5b] text-white hover:bg-[#d72a52]"
+                className="
+                  px-4 py-2 rounded-md
+                  bg-gradient-to-r from-[#FFA135] to-[#FF7236]
+                  text-white font-bold text-lg
+                  transition-all duration-200 transform
+                  hover:bg-gradient-to-r hover:from-[#FF8C1A] hover:to-[#FF5C1E]
+                  hover:scale-105
+                "
                 disabled={loading}
               >
                 {loading ? "Resetting…" : "Reset Password"}
@@ -318,7 +349,7 @@ function BrandLoginForm({ setActiveTab, onForgot }: LoginFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <h2 className="text-2xl font-semibold text-gray-800 text-center">
-        Log in as Brand
+        Login as Brand
       </h2>
       <FloatingLabelInput
         id="brandLoginEmail"
@@ -340,7 +371,12 @@ function BrandLoginForm({ setActiveTab, onForgot }: LoginFormProps) {
       <div className="text-right">
         <button
           type="button"
-          className="text-sm text-[#ef2f5b] hover:underline"
+          className="
+            text-sm
+            bg-gradient-to-r from-[#FFA135] to-[#FF7236]
+            bg-clip-text text-transparent
+            hover:underline
+          "
           onClick={onForgot}
         >
           Forgot password?
@@ -348,11 +384,17 @@ function BrandLoginForm({ setActiveTab, onForgot }: LoginFormProps) {
       </div>
       <Button
         type="submit"
-        variant="default"
-        className="w-full bg-[#ef2f5b] text-white"
+        className="
+          w-full
+          bg-gradient-to-r from-[#FFA135] to-[#FF7236]
+          text-white font-bold text-lg
+          transition-all duration-200 transform
+          hover:bg-gradient-to-r hover:from-[#FF8C1A] hover:to-[#FF5C1E]
+          hover:scale-105
+        "
         disabled={isSubmitting}
       >
-        {isSubmitting ? "Logging In…" : "Log In as Brand"}
+        {isSubmitting ? "Logging In…" : "Login"}
       </Button>
     </form>
   );
@@ -398,7 +440,7 @@ function InfluencerLoginForm({ setActiveTab, onForgot }: LoginFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <h2 className="text-2xl font-semibold text-gray-800 text-center">
-        Log in as Influencer
+        Login as Influencer
       </h2>
       <FloatingLabelInput
         id="infLoginEmail"
@@ -420,7 +462,12 @@ function InfluencerLoginForm({ setActiveTab, onForgot }: LoginFormProps) {
       <div className="text-right">
         <button
           type="button"
-          className="text-sm text-[#ef2f5b] hover:underline"
+          className="
+            text-sm
+            bg-gradient-to-r from-[#FFA135] to-[#FF7236]
+            bg-clip-text text-transparent
+            hover:underline
+          "
           onClick={onForgot}
         >
           Forgot password?
@@ -428,11 +475,17 @@ function InfluencerLoginForm({ setActiveTab, onForgot }: LoginFormProps) {
       </div>
       <Button
         type="submit"
-        variant="default"
-        className="w-full bg-[#ef2f5b] text-white"
+        className="
+          w-full
+          bg-gradient-to-r from-[#FFA135] to-[#FF7236]
+          text-white font-bold text-lg
+          transition-all duration-200 transform
+          hover:bg-gradient-to-r hover:from-[#FF8C1A] hover:to-[#FF5C1E]
+          hover:scale-105
+        "
         disabled={isSubmitting}
       >
-        {isSubmitting ? "Logging In…" : "Log In as Influencer"}
+        {isSubmitting ? "Logging In…" : "Login"}
       </Button>
     </form>
   );
@@ -450,7 +503,6 @@ function BrandSignupForm({ setActiveTab, countries }: SignupProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
 
-  // final form fields
   const [brandName, setBrandName] = useState("");
   const [brandPhone, setBrandPhone] = useState("");
   const [brandPassword, setBrandPassword] = useState("");
@@ -476,7 +528,7 @@ function BrandSignupForm({ setActiveTab, countries }: SignupProps) {
     }
     setIsSubmitting(true);
     try {
-      await post("/auth/send-otp", { email: brandEmail });
+      await post("/brand/requestOtp", { email: brandEmail });
       toast({ icon: "success", title: "OTP sent to your email" });
       setStep("otp");
     } catch (err: any) {
@@ -496,7 +548,7 @@ function BrandSignupForm({ setActiveTab, countries }: SignupProps) {
     }
     setIsVerifying(true);
     try {
-      await post("/auth/verify-otp", { email: brandEmail, otp });
+      await post("/brand/verifyOtp", { email: brandEmail, otp });
       toast({ icon: "success", title: "Email verified" });
       setStep("form");
     } catch (err: any) {
@@ -530,8 +582,8 @@ function BrandSignupForm({ setActiveTab, countries }: SignupProps) {
     try {
       await post("/brand/register", {
         name: brandName,
-        email: brandEmail,
         phone: brandPhone,
+        email: brandEmail,
         password: brandPassword,
         countryId: selectedCountry.country._id,
         callingId: selectedCode.country._id,
@@ -551,7 +603,9 @@ function BrandSignupForm({ setActiveTab, countries }: SignupProps) {
   if (step === "email") {
     return (
       <div className="space-y-6">
-        <h2 className="text-2xl font-semibold text-gray-800 text-center">Brand Sign Up</h2>
+        <h2 className="text-2xl font-semibold text-gray-800 text-center">
+          Brand Sign up
+        </h2>
         <FloatingLabelInput
           id="brandEmail"
           label="Email"
@@ -562,8 +616,14 @@ function BrandSignupForm({ setActiveTab, countries }: SignupProps) {
         />
         <Button
           onClick={sendOtp}
-          variant="default"
-          className="w-full bg-[#ef2f5b] text-white"
+          className="
+            w-full
+            bg-gradient-to-r from-[#FFA135] to-[#FF7236]
+            text-white font-bold text-lg
+            transition-all duration-200 transform
+            hover:bg-gradient-to-r hover:from-[#FF8C1A] hover:to-[#FF5C1E]
+            hover:scale-105
+          "
           disabled={isSubmitting}
         >
           {isSubmitting ? "Sending OTP…" : "Send OTP"}
@@ -575,7 +635,9 @@ function BrandSignupForm({ setActiveTab, countries }: SignupProps) {
   if (step === "otp") {
     return (
       <div className="space-y-6">
-        <h2 className="text-2xl font-semibold text-gray-800 text-center">Verify Your Email</h2>
+        <h2 className="text-2xl font-semibold text-gray-800 text-center">
+          Verify Your Email
+        </h2>
         <FloatingLabelInput
           id="brandOtp"
           label="OTP Code"
@@ -586,8 +648,14 @@ function BrandSignupForm({ setActiveTab, countries }: SignupProps) {
         />
         <Button
           onClick={verifyOtp}
-          variant="default"
-          className="w-full bg-[#ef2f5b] text-white"
+          className="
+            w-full
+            bg-gradient-to-r from-[#FFA135] to-[#FF7236]
+            text-white font-bold text-lg
+            transition-all duration-200 transform
+            hover:bg-gradient-to-r hover:from-[#FF8C1A] hover:to-[#FF5C1E]
+            hover:scale-105
+          "
           disabled={isVerifying}
         >
           {isVerifying ? "Verifying…" : "Verify OTP"}
@@ -596,7 +664,6 @@ function BrandSignupForm({ setActiveTab, countries }: SignupProps) {
     );
   }
 
-  // step === "form"
   return (
     <form onSubmit={handleRegister} className="space-y-6">
       <h2 className="text-2xl font-semibold text-gray-800 text-center">
@@ -678,8 +745,14 @@ function BrandSignupForm({ setActiveTab, countries }: SignupProps) {
       />
       <Button
         type="submit"
-        variant="default"
-        className="w-full bg-[#ef2f5b] text-white"
+        className="
+          w-full
+          bg-gradient-to-r from-[#FFA135] to-[#FF7236]
+          text-white font-bold text-lg
+          transition-all duration-200 transform
+          hover:bg-gradient-to-r hover:from-[#FF8C1A] hover:to-[#FF5C1E]
+          hover:scale-105
+        "
         disabled={isSubmitting}
       >
         {isSubmitting ? "Signing Up…" : "Sign Up as Brand"}
@@ -695,7 +768,6 @@ function InfluencerSignupForm({ setActiveTab, countries }: SignupProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
 
-  // final form fields
   const [infName, setInfName] = useState("");
   const [infPhone, setInfPhone] = useState("");
   const [infPassword, setInfPassword] = useState("");
@@ -731,7 +803,7 @@ function InfluencerSignupForm({ setActiveTab, countries }: SignupProps) {
     }
     setIsSubmitting(true);
     try {
-      await post("/auth/send-otp", { email: infEmail });
+      await post("/influencer/request-otp", { email: infEmail });
       toast({ icon: "success", title: "OTP sent to your email" });
       setStep("otp");
     } catch (err: any) {
@@ -751,7 +823,7 @@ function InfluencerSignupForm({ setActiveTab, countries }: SignupProps) {
     }
     setIsVerifying(true);
     try {
-      await post("/auth/verify-otp", { email: infEmail, otp });
+      await post("/influencer/verify-otp", { email: infEmail, otp });
       toast({ icon: "success", title: "Email verified" });
       setStep("form");
     } catch (err: any) {
@@ -810,7 +882,7 @@ function InfluencerSignupForm({ setActiveTab, countries }: SignupProps) {
     return (
       <div className="space-y-6">
         <h2 className="text-2xl font-semibold text-gray-800 text-center">
-          Influencer Sign Up
+          Influencer Sign up
         </h2>
         <FloatingLabelInput
           id="infEmail"
@@ -822,8 +894,14 @@ function InfluencerSignupForm({ setActiveTab, countries }: SignupProps) {
         />
         <Button
           onClick={sendOtp}
-          variant="default"
-          className="w-full bg-[#ef2f5b] text-white"
+          className="
+            w-full
+            bg-gradient-to-r from-[#FFA135] to-[#FF7236]
+            text-white font-bold text-lg
+            transition-all duration-200 transform
+            hover:bg-gradient-to-r hover:from-[#FF8C1A] hover:to-[#FF5C1E]
+            hover:scale-105
+          "
           disabled={isSubmitting}
         >
           {isSubmitting ? "Sending OTP…" : "Send OTP"}
@@ -848,8 +926,14 @@ function InfluencerSignupForm({ setActiveTab, countries }: SignupProps) {
         />
         <Button
           onClick={verifyOtp}
-          variant="default"
-          className="w-full bg-[#ef2f5b] text-white"
+          className="
+            w-full
+            bg-gradient-to-r from-[#FFA135] to-[#FF7236]
+            text-white font-bold text-lg
+            transition-all duration-200 transform
+            hover:bg-gradient-to-r hover:from-[#FF8C1A] hover:to-[#FF5C1E]
+            hover:scale-105
+          "
           disabled={isVerifying}
         >
           {isVerifying ? "Verifying…" : "Verify OTP"}
@@ -858,7 +942,6 @@ function InfluencerSignupForm({ setActiveTab, countries }: SignupProps) {
     );
   }
 
-  // step === "form"
   return (
     <form onSubmit={handleRegister} className="space-y-6">
       <h2 className="text-2xl font-semibold text-gray-800 text-center">
@@ -983,8 +1066,14 @@ function InfluencerSignupForm({ setActiveTab, countries }: SignupProps) {
       />
       <Button
         type="submit"
-        variant="default"
-        className="w-full bg-[#ef2f5b] text-white"
+        className="
+          w-full
+          bg-gradient-to-r from-[#FFA135] to-[#FF7236]
+          text-white font-bold text-lg
+          transition-all duration-200 transform
+          hover:bg-gradient-to-r hover:from-[#FF8C1A] hover:to-[#FF5C1E]
+          hover:scale-105
+        "
         disabled={isSubmitting}
       >
         {isSubmitting ? "Signing Up…" : "Sign Up as Influencer"}
@@ -1013,8 +1102,8 @@ export default function AuthPage() {
 
   const roleBtnClass = useCallback(
     (current: Role) =>
-      `w-1/2 py-2 text-sm font-medium text-center transition border rounded-md ${role === current
-        ? "bg-[#ef2f5b] text-white border-[#ef2f5b]"
+      `w-1/2 py-2 text-sm font-medium text-center transition border rounded-md ${role !== current
+        ? "bg-gradient-to-r from-[#FFA135] to-[#FF7236] text-white border-transparent"
         : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
       }`,
     [role]
@@ -1038,119 +1127,121 @@ export default function AuthPage() {
 
   return (
     <>
-      {/* Topbar */}
       <header className="fixed top-0 inset-x-0 bg-white shadow-md py-3 px-6 z-50">
         <div
           className="flex items-center max-w-6xl mx-auto cursor-pointer"
           onClick={() => router.push("/")}
         >
-          <img
-            src="/logo.png"
-            alt="CollabGlam logo"
-            className="h-8 w-auto"
-          />
+          <img src="/logo.png" alt="CollabGlam logo" className="h-8 w-auto" />
           <span className="ml-3 text-xl font-bold text-gray-800">
             CollabGlam
           </span>
         </div>
       </header>
 
+      <div
+        className="
+    max-h-screen flex pt-12
+    bg-gradient-to-r
+      from-[#FF7241]/20
+      via-[#FFA135]/40
+      to-white
+  "
+      >
 
-      <div className="max-h-screen flex pt-12">
-        {/* Left graphic panel (only on lg+) */}
-        <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-[#fff5f7] to-[#ffe8ed] flex-col justify-center px-16 h-screen sticky top-12">
+        <div className="hidden lg:flex w-1/2 flex-col justify-center items-center px-16 h-screen sticky top-12">
           {role === "brand" ? (
             <>
               <img
-                src="/brand.jpg"
+                src="/brand.png"
                 alt="Brands uploading campaigns"
-                className="mb-8 w-full max-w-xl rounded-lg shadow-md"
+                className="mb-8 w-full max-w-xl "
               />
-              <h1 className="text-4xl font-extrabold text-[#ef2f5b] mb-2">
-                Collabglam for Brands
+              <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gray-800 mb-2">
+                CollabGlam for Brands
               </h1>
               <p className="text-lg text-gray-700 mb-4">
-                Upload campaigns to boost brand awareness, drive growth, and increase sales.
+                Post campaigns to boost brand awareness, drive growth, and
+                increase sales.
               </p>
-              <ul className="list-disc list-inside space-y-2 text-gray-600">
-                <li>📤 Create & publish targeted campaigns in minutes</li>
-                <li>🌟 Expand your reach with curated influencer matches</li>
-                <li>💰 Track ROI and conversions in real time</li>
-                <li>🔒 Manage all briefs, contracts, and payouts securely</li>
-              </ul>
             </>
           ) : (
             <>
               <img
-                src="/influencer.jpg"
+                src="/influencer.png"
                 alt="Influencers applying to campaigns"
-                className="mb-8 w-full max-w-xl rounded-lg shadow-md"
+                className="mb-8 w-full max-w-xl"
               />
-              <h1 className="text-4xl font-extrabold text-[#ef2f5b] mb-2">
-                Collabglam for Influencers
+              <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gray-800 mb-2">
+                CollabGlam for Influencers
               </h1>
               <p className="text-lg text-gray-700 mb-4">
-                Discover and apply to campaigns, then collaborate directly with brands—all in one place.
+                Discover and apply to campaigns, then collaborate directly with
+                brands—all in one place.
               </p>
-              <ul className="list-disc list-inside space-y-2 text-gray-600">
-                <li>📝 Browse campaigns tailored to your niche</li>
-                <li>✉️ Send applications and negotiate terms instantly</li>
-                <li>💬 Message brands and coordinate details seamlessly</li>
-                <li>📊 Monitor your application status and earnings</li>
-              </ul>
             </>
           )}
         </div>
 
-        {/* Auth form panel */}
-        <div className="flex w-full lg:w-1/2 items-center justify-center bg-white px-6 py-12">
-          <div className="w-full max-w-md space-y-6">
-            {/* Logo */}
-            <div className="flex items-center justify-center space-x-3 mb-6">
-              <img src="/logo.png" alt="Collabglam logo" className="h-12" />
-              <h1 className="text-2xl font-extrabold text-gray-800">Collabglam</h1>
-            </div>
+        <div className="flex flex-col w-full lg:w-1/2 items-center justify-center px-6 py-12 space-y-8">
+          {/* Logo above */}
+          <div className="flex items-center justify-center space-x-3">
+            <img src="/logo.png" alt="CollabGlam logo" className="h-12" />
+            <h1 className="text-2xl font-extrabold text-gray-800">
+              CollabGlam
+            </h1>
+          </div>
 
-            {/* Tabs */}
+          {/* Form card below */}
+          <div className="w-full max-w-md space-y-6 bg-white rounded-lg shadow-lg p-8">
+            <FormComponent
+              setActiveTab={setActiveTab}
+              onForgot={() => setShowForgot(true)}
+              countries={countries}
+            />
+
             <div className="flex mb-6 rounded-full overflow-hidden border border-gray-200">
               {(["login", "signup"] as Tab[]).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={`flex-1 py-2 text-sm font-medium transition ${activeTab === tab
-                      ? "bg-white text-[#ef2f5b]"
-                      : "bg-transparent text-gray-600 hover:text-[#ef2f5b]"
+                    ? "bg-white bg-clip-text text-transparent bg-gradient-to-r from-[#FFA135] to-[#FF7236]"
+                    : "bg-transparent text-gray-600 hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-[#FFA135] hover:to-[#FF7236]"
                     }`}
                 >
-                  {tab === "login" ? "Log In" : "Sign Up"}
+                  {tab === "login" ? "Login" : "Sign up"}
                 </button>
               ))}
             </div>
 
-            {/* Dynamic Form */}
-            <FormComponent
-              setActiveTab={setActiveTab}
-              countries={countries}
-              onForgot={() => setShowForgot(true)}
-            />
+          </div>
+          <div className="flex space-x-4 w-full max-w-md justify-center">
+            {
+              role === "brand" ? (
+                <button
+                  className={roleBtnClass("influencer")}
+                  onClick={() => setRole("influencer")}
+                >
+                  Continue as Influencer
+                </button>
+              ) : (
 
-            {/* Role Switch */}
-            <div className="flex space-x-4 mt-8">
-              <button className={roleBtnClass("brand")} onClick={() => setRole("brand")}>
-                Continue with Brand
-              </button>
-              <button
-                className={roleBtnClass("influencer")}
-                onClick={() => setRole("influencer")}
-              >
-                Continue with Influencer
-              </button>
-            </div>
+                <button
+                  className={roleBtnClass("brand")}
+                  onClick={() => setRole("brand")}
+                >
+                  Continue as Brand
+                </button>
+              )
+            }
           </div>
         </div>
 
-        {/* Forgot Password Modal */}
-        {showForgot && <ForgotPasswordModal role={role} onClose={() => setShowForgot(false)} />}
+
+        {showForgot && (
+          <ForgotPasswordModal role={role} onClose={() => setShowForgot(false)} />
+        )}
       </div>
     </>
   );

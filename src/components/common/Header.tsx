@@ -30,9 +30,8 @@ const Header: React.FC = () => {
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 font-lexend ${
-        isScrolled ? 'bg-white/95 backdrop-blur-md shadow-lg' : 'bg-transparent'
-      }`}
+      className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 font-lexend ${isScrolled ? 'bg-white/95 backdrop-blur-md shadow-lg' : 'bg-transparent'
+        }`}
     >
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-20">
@@ -45,19 +44,28 @@ const Header: React.FC = () => {
               height={50}
               className="rounded-lg"
             />
-            <span className="text-xl font-bold text-gray-900">Collabglam</span>
+            <span className="text-xl font-bold text-gray-900">CollabGlam</span>
           </div>
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-8">
             {navLinks.map(link => (
-              <a
-                key={link.label}
-                href={link.href}
-                className="font-medium text-gray-700 hover:text-[#ef2f5b] transition-colors"
-              >
-                {link.label}
-              </a>
+<a
+  key={link.label}
+  href={link.href}
+  className="
+    font-medium text-gray-700
+    transition-colors duration-200
+    hover:text-transparent
+    hover:bg-gradient-to-r
+    hover:from-[#FFA135]
+    hover:to-[#FF7236]
+    hover:bg-clip-text
+  "
+>
+  {link.label}
+</a>
+
             ))}
           </nav>
 
@@ -65,10 +73,22 @@ const Header: React.FC = () => {
           <div className="hidden lg:flex items-center space-x-4">
             <button
               onClick={() => navigate('/login')}
-              className="px-6 py-2 bg-[#ef2f5b] text-white font-medium rounded-lg hover:bg-[#c21f4f] transition-all transform hover:scale-105"
+              className="
+    px-6 py-2
+    bg-gradient-to-r from-[#FFA135] to-[#FF7236]
+    text-white font-medium rounded-lg
+    transition-all transform
+    hover:bg-gradient-to-r
+    hover:from-[#FFA236] hover:to-[#FF7456]
+    hover:shadow-lg
+    hover:scale-105
+    cursor-pointer
+  "
             >
-              Get Started
+              <strong>Get Started</strong>
             </button>
+
+
           </div>
 
           {/* Mobile Menu Toggle */}

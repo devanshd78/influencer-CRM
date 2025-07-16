@@ -32,13 +32,11 @@ export default function AboutPage() {
 
   // Pink & Yellow theme
   const PRIMARY = '#ef2f5b';
-  const ACCENT = '#ffd166';
 
   return (
     <div
       className="min-h-screen flex flex-col"
-      style={{ backgroundColor: 'rgba(239,47,91,0.05)' }}
-    >
+      style={{ backgroundColor: 'rgba(239,47,91,0.05)' }}>
       {/* Site Header */}
       <header className="sticky top-0 z-50 border-b border-white/20 bg-white/70 backdrop-blur-lg shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
@@ -75,7 +73,7 @@ export default function AboutPage() {
             About CollabGlam
           </h1>
           <p className="mt-2 text-gray-700">
-            Empowering brands and creators through authentic, data-driven partnerships.
+            Easiest way to connect brand and influencer
           </p>
         </div>
       </header>
@@ -89,8 +87,7 @@ export default function AboutPage() {
               Our Mission
             </h2>
             <p className="text-gray-600 leading-relaxed">
-              To bridge brands and creators with seamless, data-driven campaigns that
-              foster genuine engagement and measurable growth.
+              To connect brand and influencer seamless, influencer, find perfect brand and brand, find perfect influencers for their product review, unboxing, and promotion. Our goal is to get brand and influencer grow.
             </p>
           </div>
           {/* Vision */}
@@ -99,8 +96,7 @@ export default function AboutPage() {
               Our Vision
             </h2>
             <p className="text-gray-600 leading-relaxed">
-              A world where every brand finds its perfect creator match, and every creator
-              has the tools to turn passion into purpose.
+              A platform where every brand finds it perfect influencer, and every influencer has the tool to turn passion into propose
             </p>
           </div>
         </div>
@@ -110,16 +106,15 @@ export default function AboutPage() {
           <h3 className="text-2xl font-bold text-gray-900 mb-8">
             Our Core Values
           </h3>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-1 lg:grid-cols-3 gap-8 max-w-3xl mx-auto">
             {[
-              { Icon: Shield, title: 'Authenticity', desc: 'We champion genuine storytelling and honest connections above all.' },
               { Icon: Play, title: 'Creativity', desc: 'Bold ideas and innovative campaigns that spark real impact.' },
-              { Icon: Users, title: 'Collaboration', desc: 'Working hand-in-hand with creators and brands for shared success.' },
+              { Icon: Users, title: 'Collaboration', desc: 'Working hand-in-hand with influencers and brands for shared success.' },
               { Icon: TrendingUp, title: 'Excellence', desc: 'Setting industry standards through top-tier service and insights.' },
             ].map(({ Icon, title, desc }) => (
               <Card
                 key={title}
-                className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
+                className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 rounded-lg bg-white shadow-lg p-6 space-y-4 cursor-pointer"
               >
                 <CardHeader className="text-center pb-4">
                   <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-pink-100 flex items-center justify-center group-hover:bg-yellow-100 transition-colors">

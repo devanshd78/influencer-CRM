@@ -28,7 +28,7 @@ const Features = () => (
             >
               {/* Text */}
               <div className="flex-1 lg:max-w-xl">
-                <div className="w-14 h-14 rounded-full bg-[#ef2f5b] flex items-center justify-center mb-6">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-r from-[#FFA135] to-[#FF7236] flex items-center justify-center mb-6">
                   <Icon className="h-7 w-7 text-white" />
                 </div>
                 <h3 className="text-3xl font-bold text-gray-900 mb-4">

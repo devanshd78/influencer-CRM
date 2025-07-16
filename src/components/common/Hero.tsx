@@ -68,10 +68,22 @@ const Hero = () => {
               Turn every campaign into tangible revenue with CollabGlam’s smart brand-influencer collaboration dashboard. Join thousands of brands and creators maximizing earnings through targeted partnerships.
             </p>
 
-            <button className="group inline-flex items-center px-8 py-4 bg-[#ef2f5b] text-white font-semibold rounded-lg text-lg hover:bg-portal-dark transition-all transform hover:scale-105 shadow-lg cursor-pointer" onClick={() => router.push('/login')}>
-              Sign Up
-              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </button>
+<button
+  className="
+    group inline-flex items-center px-8 py-4
+    bg-gradient-to-r from-[#FFA135] to-[#FF7236]
+    text-white font-semibold rounded-lg text-lg
+    transition-all duration-200 transform
+    hover:bg-gradient-to-r hover:from-[#FF8C1A] hover:to-[#FF5C1E]
+    hover:shadow-lg hover:scale-105
+    cursor-pointer
+  "
+  onClick={() => router.push('/login')}
+>
+  Sign Up
+  <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+</button>
+
           </div>
 
           {/* Right Content - Device Mockups */}
@@ -128,7 +140,7 @@ const Hero = () => {
       
       {/* Active Creators */}
       <div className="bg-white p-6 rounded-2xl shadow-md text-center transform transition-all hover:scale-105">
-        <div className="inline-flex items-center justify-center p-3 bg-gradient-to-r from-[#FF8C00] via-[#FF5E7E] to-[#D12E53] rounded-full mb-4 mx-auto">
+        <div className="inline-flex items-center justify-center p-3 bg-gradient-to-r from-[#FFA135] to-[#FF7236] rounded-full mb-4 mx-auto">
           <Users className="h-6 w-6 text-white" />
         </div>
         <div className="text-4xl lg:text-5xl font-bold text-gray-900 mb-2">
@@ -139,7 +151,7 @@ const Hero = () => {
 
       {/* Revenue Generated */}
       <div className="bg-white p-6 rounded-2xl shadow-md text-center transform transition-all hover:scale-105">
-        <div className="inline-flex items-center justify-center p-3 bg-gradient-to-r from-[#FF8C00] via-[#FF5E7E] to-[#D12E53] rounded-full mb-4 mx-auto">
+        <div className="inline-flex items-center justify-center p-3 bg-gradient-to-r from-[#FFA135] to-[#FF7236] rounded-full mb-4 mx-auto">
           <DollarSign className="h-6 w-6 text-white" />
         </div>
         <div className="text-4xl lg:text-5xl font-bold text-gray-900 mb-2">
@@ -150,7 +162,7 @@ const Hero = () => {
 
       {/* Countries */}
       <div className="bg-white p-6 rounded-2xl shadow-md text-center transform transition-all hover:scale-105">
-        <div className="inline-flex items-center justify-center p-3 bg-gradient-to-r from-[#FF8C00] via-[#FF5E7E] to-[#D12E53] rounded-full mb-4 mx-auto">
+        <div className="inline-flex items-center justify-center p-3 bg-gradient-to-r from-[#FFA135] to-[#FF7236] rounded-full mb-4 mx-auto">
           <Globe className="h-6 w-6 text-white" />
         </div>
         <div className="text-4xl lg:text-5xl font-bold text-gray-900 mb-2">
@@ -161,7 +173,7 @@ const Hero = () => {
 
       {/* Deal Closed */}
       <div className="bg-white p-6 rounded-2xl shadow-md text-center transform transition-all hover:scale-105">
-        <div className="inline-flex items-center justify-center p-3 bg-gradient-to-r from-[#FF8C00] via-[#FF5E7E] to-[#D12E53] rounded-full mb-4 mx-auto">
+        <div className="inline-flex items-center justify-center p-3 bg-gradient-to-r from-[#FFA135] to-[#FF7236] rounded-full mb-4 mx-auto">
           <CheckCircle className="h-6 w-6 text-white" />
         </div>
         <div className="text-4xl lg:text-5xl font-bold text-gray-900 mb-2">

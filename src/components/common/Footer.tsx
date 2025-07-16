@@ -120,7 +120,7 @@ export default function FooterWithNewsletter() {
                 height={50}
                 className="rounded-lg"
               />
-              <span className="ml-3 text-2xl font-bold">Collabglam</span>
+              <span className="ml-3 text-2xl font-bold">CollabGlam</span>
             </div>
 
             <p className="text-gray-300 mb-6 leading-relaxed max-w-sm">
@@ -209,7 +209,8 @@ export default function FooterWithNewsletter() {
             <button
               onClick={handleSubscribe}
               disabled={loading}
-              className="px-6 py-3 bg-pink-600 text-white font-semibold rounded-r-md hover:bg-pink-700 transition-colors disabled:opacity-50"
+              className="px-6 py-3 bg-gradient-to-r from-[#FFA135] to-[#FF7236]
+    text-white font-bold text-lg text-white font-semibold rounded-r-md hover:bg-pink-700 transition-colors disabled:opacity-50"
             >
               {loading ? "Subscribing…" : "Subscribe"}
             </button>

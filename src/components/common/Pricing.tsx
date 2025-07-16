@@ -7,13 +7,13 @@ import { post } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 
 const FEATURE_LABELS: Record<string, string> = {
-  influencer_search_quota:      'Influencer searches / mo',
-  live_campaigns_limit:         'Live campaigns',
-  email_outreach_credits:       'Email credits',
-  dedicated_manager_support:    'Dedicated manager',
-  apply_to_campaigns_quota:     'Campaign applications / mo',
-  pitch_templates_access:       'Pitch templates',
-  dedicated_support_access:     'Priority support',
+  influencer_search_quota: 'Influencer searches / mo',
+  live_campaigns_limit: 'Live campaigns',
+  email_outreach_credits: 'Email credits',
+  dedicated_manager_support: 'Dedicated manager',
+  apply_to_campaigns_quota: 'Campaign applications / mo',
+  pitch_templates_access: 'Pitch templates',
+  dedicated_support_access: 'Priority support',
 };
 
 const formatFeatureValue = (key: string, v: number): string => {
@@ -49,7 +49,7 @@ const Pricing: React.FC = () => {
 
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string|null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // fetch plans whenever role changes
   useEffect(() => {
@@ -90,11 +90,10 @@ const Pricing: React.FC = () => {
               <button
                 key={role}
                 onClick={() => setActiveRole(role)}
-                className={`px-6 py-2 rounded-lg font-medium transition-all ${
-                  activeRole === role
+                className={`px-6 py-2 rounded-lg font-medium transition-all ${activeRole === role
                     ? 'bg-white shadow text-gray-900'
                     : 'text-gray-600 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 {role}s
               </button>
@@ -104,14 +103,31 @@ const Pricing: React.FC = () => {
 
         {/* Loading / Error */}
         {loading && (
-          <p className="text-center text-gray-500">Loading plans…</p>
+          <div className="grid lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
+            {[...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                className="bg-white rounded-3xl shadow-lg animate-pulse p-8 flex flex-col h-full"
+              >
+                <div className="h-6 bg-gray-300 rounded mb-4 w-1/2" />
+                <div className="h-4 bg-gray-300 rounded mb-6 w-1/3" />
+                <div className="h-12 bg-gray-300 rounded mb-6 w-full" />
+                <div className="flex-1 space-y-4 mb-8">
+                  {[...Array(5)].map((__, idx) => (
+                    <div key={idx} className="h-4 bg-gray-300 rounded w-full" />
+                  ))}
+                </div>
+                <div className="h-10 bg-gray-300 rounded w-full" />
+              </div>
+            ))}
+          </div>
         )}
         {error && (
           <p className="text-center text-red-600">{error}</p>
         )}
 
         {/* Plans grid */}
-        <div className="grid lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
+        <div className="grid lg:grid-cols-4 gap-8 max-w-8xl mx-auto">
           {!loading && plans.map(plan => (
             <div
               key={plan._id}
@@ -119,22 +135,22 @@ const Pricing: React.FC = () => {
             >
               <div className="p-8 flex-1 flex flex-col">
                 {/* Header */}
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2 text-center">
                   {plan.name.charAt(0).toUpperCase() + plan.name.slice(1)}
                 </h3>
-                <p className="text-gray-600 mb-6">
+                <p className="text-gray-600 mb-6 text-center">
                   {plan.monthlyCost === 0
                     ? 'Forever free'
                     : 'Paid plan'}
                 </p>
 
                 {/* Price */}
-                <div className="mb-6">
+                <div className="mb-6 text-center">
                   {plan.monthlyCost === 0 ? (
-                    <span className="text-4xl font-bold text-gray-900">Free</span>
+                    <span className="text-4xl font-bold text-gray-900 justify-center text-center">Free</span>
                   ) : (
                     <div className="flex items-baseline justify-center">
-                      <span className="text-5xl font-bold text-gray-900">
+                      <span className="text-5xl font-bold text-gray-900 text-center">
                         ${plan.monthlyCost}
                       </span>
                       <span className="text-gray-600 ml-2">/month</span>
@@ -165,12 +181,22 @@ const Pricing: React.FC = () => {
 
                 {/* Action */}
                 <div className="mt-auto">
-                  <button
-                    className="w-full py-4 px-6 bg-[#ef2f5b] text-white font-bold text-lg rounded-lg hover:bg-[#c21f4f] transition-all hover:scale-105"
-                    onClick={() => router.push('/login')}
-                  >
-                    {plan.monthlyCost === 0 ? 'Start Free' : 'Choose Plan'}
-                  </button>
+<button
+  className="
+    w-full py-4 px-6
+    bg-gradient-to-r from-[#FFA135] to-[#FF7236]
+    text-white font-bold text-lg
+    rounded-lg
+    transition-all duration-200 transform
+    shadow-lg cursor-pointer
+    hover:bg-gradient-to-r hover:from-[#FF8C1A] hover:to-[#FF5C1E]
+    hover:scale-105
+  "
+  onClick={() => router.push('/login')}
+>
+  {plan.monthlyCost === 0 ? 'Start Free' : 'Choose Plan'}
+</button>
+
                 </div>
               </div>
             </div>

@@ -189,11 +189,12 @@ export default function ContactUs() {
               <strong>Phone:</strong> +1 (904) 219-4648
             </p>
             <p>
-              <strong>Address:</strong>
+              <strong>Address: </strong>
+              8825 PERIMETER PARK BLVD STE 501
               <br />
-              Collabglam HQ
+              JACKSONVILLE, FL 32216-1123
               <br />
-              Florida, USA
+              USA
             </p>
           </div>
         </div>

@@ -1,33 +1,80 @@
-// app/brand/dashboard/page.tsx
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { HiOutlineChartBar, HiOutlineUsers, HiOutlineCurrencyDollar } from "react-icons/hi";
 import { format } from "date-fns";
+import { post } from "@/lib/api";
+
+interface DashboardData {
+  brandName: string;
+  totalActiveCampaigns: number;
+  totalInfluencers: number;
+  budgetRemaining: number;
+}
 
 export default function BrandDashboardHome() {
-  // Replace these “dummy” values with real data fetched from your backend
-  const activeCampaignsCount = 4;
-  const totalInfluencers = 347;
-  const budgetRemaining = 12000; // in USD
-
+  const router = useRouter();
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const today = format(new Date(), "MMMM d, yyyy");
+
+  useEffect(() => {
+    const brandId = localStorage.getItem("brandId");
+    if (!brandId) {
+      setError("No brandId found in localStorage");
+      return;
+    }
+
+    (async () => {
+      try {
+        const json = await post<DashboardData>("/dash/brand", { brandId });
+        // if no active campaigns, send them to create flow
+        if (json.totalActiveCampaigns === 0) {
+          router.push("/brand/create-campaign");
+          return;
+        }
+        setData(json);
+      } catch (err: any) {
+        console.error("Dashboard fetch error:", err);
+        setError(
+          err.response?.data?.error ||
+          err.message ||
+          "Could not load dashboard data"
+        );
+      }
+    })();
+  }, [router]);
+
+  if (error) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p>Loading dashboard…</p>
+      </div>
+    );
+  }
+
+  const { brandName, totalActiveCampaigns, totalInfluencers, budgetRemaining } = data;
 
   return (
     <div className="flex h-screen overflow-hidden">
-
       <div className="flex-1 flex flex-col overflow-y-auto">
-
-        {/* Page Body */}
         <main className="flex-1 px-6 py-8">
           {/* Welcome Banner */}
           <div className="rounded-lg bg-white p-6 mb-8">
             <h2 className="text-xl font-semibold text-[#ef2f5b] mb-2">
-              Welcome Back, Brand Manager!
+              Welcome Back, {brandName}!
             </h2>
             <p className="text-gray-700">
-              Here’s a quick overview of your account. Click on any card to view
-              more details or manage campaigns.
+              Here’s a quick overview of your account as of {today}. Click any card to view details.
             </p>
           </div>
 
@@ -36,17 +83,14 @@ export default function BrandDashboardHome() {
             {/* Active Campaigns */}
             <div
               className="bg-white rounded-lg shadow p-5 flex items-center space-x-4 cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => {
-                // Navigate to “Previous Campaigns” or “Create Campaign”
-                window.location.href = "/brand/dashboard/previous";
-              }}
+              onClick={() => router.push("/brand/dashboard/previous")}
             >
               <div className="p-3 bg-[#ef2f5b]/20 rounded-full">
                 <HiOutlineChartBar className="text-[#ef2f5b]" size={32} />
               </div>
               <div>
                 <p className="text-3xl font-bold text-gray-800">
-                  {activeCampaignsCount}
+                  {totalActiveCampaigns}
                 </p>
                 <p className="text-gray-600">Active Campaigns</p>
               </div>
@@ -55,9 +99,7 @@ export default function BrandDashboardHome() {
             {/* Total Influencers */}
             <div
               className="bg-white rounded-lg shadow p-5 flex items-center space-x-4 cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => {
-                window.location.href = "/brand/dashboard/browse";
-              }}
+              onClick={() => router.push("/brand/browse-influencers")}
             >
               <div className="p-3 bg-[#4f46e5]/20 rounded-full">
                 <HiOutlineUsers className="text-[#4f46e5]" size={32} />
@@ -73,9 +115,7 @@ export default function BrandDashboardHome() {
             {/* Budget Remaining */}
             <div
               className="bg-white rounded-lg shadow p-5 flex items-center space-x-4 cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => {
-                window.location.href = "/brand/dashboard/settings";
-              }}
+              onClick={() => router.push("/brand/dashboard/settings")}
             >
               <div className="p-3 bg-[#10b981]/20 rounded-full">
                 <HiOutlineCurrencyDollar className="text-[#10b981]" size={32} />

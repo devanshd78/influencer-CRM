@@ -77,7 +77,7 @@ export default function PrivacyPolicyAdmin() {
       <Button
         onClick={handleSave}
         disabled={!dirty || saving}
-        className="bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+        className="bg-[#ef2f5b] text-white hover:bg-[#ef2f5b]/80 disabled:opacity-50"
       >
         {saving ? 'Saving…' : 'Save'}
       </Button>
