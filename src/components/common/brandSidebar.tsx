@@ -10,7 +10,6 @@ import {
   HiCheckCircle,
   HiClipboardList,
   HiUsers,
-  HiCog,
   HiLogout,
   HiMenu,
   HiX,
@@ -50,31 +49,31 @@ export default function BrandSidebar({ isOpen, onClose }: BrandSidebarProps) {
 
   const renderLinks = () =>
     menuItems.map((item) => {
-      const isActive = pathname === item.href;
-      const isNew = item.name === "Create New Campaign";
+      const isActive = pathname.startsWith(item.href);
 
-      const baseClasses = "flex items-center py-3 px-3 rounded-md transition-colors duration-200";
-      const activeClasses = isActive
-        ? "bg-pink-100 text-pink-600"
-        : "text-gray-800 hover:bg-pink-50 hover:text-pink-600";
-      const newClasses = isNew
-        ? "font-bold bg-[#EF2F5B]/80 text-white shadow-md"
-        : "";
+      const base = "flex items-center py-3 px-4 rounded-md transition-all duration-200";
+      const active = isActive
+        ? "bg-gradient-to-r from-[#FFA135] to-[#FF7236] text-white"
+        : "text-gray-800 hover:bg-gradient-to-r hover:from-[#FFA135] hover:to-[#FF7236] hover:text-white";
 
       return (
         <li key={item.href} className="group">
           <Link
             href={item.href}
-            className={`${baseClasses} ${activeClasses} ${newClasses}`}
+            className={`${base} ${active}`}
             title={collapsed ? item.name : undefined}
             onClick={onClose}
           >
             <item.icon
               size={20}
-              className={`flex-shrink-0 ${isActive ? "text-pink-600" : "text-gray-400 group-hover:text-pink-600"
+              className={`flex-shrink-0 ${isActive
+                  ? "text-white"
+                  : "text-gray-400 group-hover:text-white"
                 }`}
             />
-            {!collapsed && <span className="ml-3 text-md font-medium">{item.name}</span>}
+            {!collapsed && (
+              <span className="ml-3 text-md font-medium">{item.name}</span>
+            )}
           </Link>
         </li>
       );
@@ -82,22 +81,29 @@ export default function BrandSidebar({ isOpen, onClose }: BrandSidebarProps) {
 
   const sidebarContent = (
     <div
-      className={`flex flex-col h-full bg-white text-gray-800 ${collapsed ? "w-16" : "w-64"
-        } transition-width duration-300 ease-in-out`}
+      className={`
+        flex flex-col h-full bg-white text-gray-800
+        ${collapsed ? "w-16" : "w-64"}
+        transition-width duration-300 ease-in-out
+      `}
     >
       {/* Header */}
       <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-        <Link href="/brand/dashboard" className="flex items-center space-x-2">
-          <img src="/logo.png" alt="Collabglam logo" className="h-8 w-auto" />
-          {!collapsed && <span className="text-xl font-semibold">Brand Portal</span>}
-        </Link>
         <button
-          onClick={() => setCollapsed((prev) => !prev)}
-          className="p-2 rounded-md hover:bg-pink-50 focus:outline-none focus:ring-2 focus:ring-pink-600"
+          onClick={() => setCollapsed((p) => !p)}
+          className="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FFA135]"
           title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
         >
-          <HiMenu size={20} className="text-gray-800" />
+          <HiMenu size={24} className="text-gray-800" />
         </button>
+        <Link href="/brand/dashboard" className="flex items-center space-x-2">
+          <img src="/logo.png" alt="Collabglam logo" className="h-10 w-auto" />
+          {!collapsed && (
+            <span className="text-2xl font-semibold text-gray-900">
+              CollabGlam
+            </span>
+          )}
+        </Link>
       </div>
 
       {/* Navigation */}
@@ -109,11 +115,17 @@ export default function BrandSidebar({ isOpen, onClose }: BrandSidebarProps) {
       <div className="border-t border-gray-200 p-4">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center py-2 px-3 rounded-md text-gray-800 hover:bg-pink-50 hover:text-pink-800 transition-colors duration-200"
+          className="
+            w-full flex items-center py-2 px-4 rounded-md
+            text-gray-800 hover:bg-gradient-to-r hover:from-[#FFA135] hover:to-[#FF7236] hover:text-white
+            transition-colors duration-200
+          "
           title={collapsed ? "Logout" : undefined}
         >
           <HiLogout size={20} className="flex-shrink-0" />
-          {!collapsed && <span className="ml-3 text-md font-medium">Logout</span>}
+          {!collapsed && (
+            <span className="ml-3 text-md font-medium">Logout</span>
+          )}
         </button>
       </div>
     </div>
@@ -139,11 +151,13 @@ export default function BrandSidebar({ isOpen, onClose }: BrandSidebarProps) {
             <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
               <Link href="/brand/dashboard" className="flex items-center space-x-2">
                 <img src="/logo.png" alt="Collabglam logo" className="h-8 w-auto" />
-                <span className="text-xl font-semibold">Brand Portal</span>
+                <span className="text-xl font-semibold text-gray-900">
+                  Brand Portal
+                </span>
               </Link>
               <button
                 onClick={onClose}
-                className="p-2 rounded-md hover:bg-pink-50 focus:outline-none focus:ring-2 focus:ring-pink-600"
+                className="p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FFA135]"
                 title="Close Sidebar"
               >
                 <HiX size={24} className="text-gray-800" />
@@ -162,7 +176,11 @@ export default function BrandSidebar({ isOpen, onClose }: BrandSidebarProps) {
                   handleLogout();
                   onClose();
                 }}
-                className="w-full flex items-center py-2 px-3 rounded-md text-gray-800 hover:bg-pink-50 hover:text-pink-800 transition-colors duration-200"
+                className="
+                  w-full flex items-center py-2 px-4 rounded-md
+                  text-gray-800 hover:bg-gradient-to-r hover:from-[#FFA135] hover:to-[#FF7236] hover:text-white
+                  transition-colors duration-200
+                "
               >
                 <HiLogout size={20} className="flex-shrink-0" />
                 <span className="ml-3 text-md font-medium">Logout</span>

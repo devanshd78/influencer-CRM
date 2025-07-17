@@ -127,7 +127,7 @@ export default function BrandActiveCampaignsPage() {
     }).format(amt);
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 min-h-screen">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-semibold">Active Campaigns</h1>
       </div>
@@ -189,120 +189,142 @@ function SkeletonTable() {
   );
 }
 
-function TableView({ data, expandedIds, counts, onToggle, formatDate, formatCurrency }: any) {
+  const TABLE_GRADIENT_FROM = "#FFA135";
+  const TABLE_GRADIENT_TO = "#FF7236";
+
+
+function TableView({
+  data,
+  formatDate,
+  formatCurrency,
+}: any) {
   return (
-    <div className="overflow-x-auto bg-white shadow rounded-lg">
-      <table className="w-full text-sm text-gray-600">
-        <thead className="bg-gray-100">
-          <tr>
-            {["Campaign", "Budget", "Status", "Timeline", "Influencers Applied", "Actions"].map(
-              (h: string, i: number) => (
+    // Gradient border wrapper
+    <div
+      className="p-[1.5px] rounded-lg bg-gradient-to-r shadow"
+    >
+      {/* Inner table container */}
+      <div className="overflow-x-auto bg-white rounded-[0.5rem]">
+        <table className="w-full text-sm text-gray-600">
+          <thead
+            className="text-left text-white"
+            style={{
+              backgroundImage: `linear-gradient(to right, ${TABLE_GRADIENT_FROM}, ${TABLE_GRADIENT_TO})`,
+            }}
+          >
+            <tr>
+              {[
+                "Campaign",
+                "Budget",
+                "Status",
+                "Timeline",
+                "Influencers Applied",
+                "Actions",
+              ].map((h: string, i: number) => (
                 <th
                   key={i}
-                  className="px-6 py-3 text-left font-medium whitespace-nowrap"
+                  className="px-6 py-3 font-medium whitespace-nowrap"
                 >
                   {h}
                 </th>
-              )
-            )}
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((c: Campaign, idx: number) => (
-            <React.Fragment key={c.id}>
-              <tr
-                className={`${idx % 2 === 0 ? "bg-white" : "bg-gray-50"
-                  } hover:bg-gray-100 transition-colors`}
-              >
-                <td className="px-6 py-4">
-                  <div className="font-medium text-gray-900">
-                    {c.productOrServiceName}
-                  </div>
-                  <div className="text-gray-600 line-clamp-1">
-                    {c.description}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {formatCurrency(c.budget)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${c.isActive === 1
-                      ? "bg-green-100 text-green-800"
-                      : "bg-red-100 text-red-800"
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((c: Campaign, idx: number) => (
+              <React.Fragment key={c.id}>
+                <tr
+                  className={`
+                    ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                    group
+                    transition-colors
+                    hover:bg-transparent
+                  `}
+                  // gradient hover overlay
+                  style={{
+                    backgroundImage:
+                      "var(--row-hover-gradient)",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget.style.backgroundImage = `linear-gradient(to right, ${TABLE_GRADIENT_FROM}11, ${TABLE_GRADIENT_TO}11)`);
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundImage = "";
+                  }}
+                >
+                  <td className="px-6 py-4 align-top">
+                    <div className="font-medium text-gray-900">
+                      {c.productOrServiceName}
+                    </div>
+                    <div className="text-gray-600 line-clamp-1">
+                      {c.description}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap align-top">
+                    {formatCurrency(c.budget)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap align-top">
+                    <span
+                      className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${
+                        c.isActive === 1
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
                       }`}
-                  >
-                    {c.isActive === 1 ? "Active" : "Inactive"}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {formatDate(c.timeline.startDate)} - {formatDate(c.timeline.endDate)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-center">
-                  {c.applicantCount ?? "0"}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                {/* <button
-                    onClick={() => onToggle(c)}
-                    className="p-2 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100 focus:outline-none"
-                  >
-                    {expandedIds.has(c.id) ? (
-                      <HiChevronUp size={18} />
-                    ) : (
-                      <HiChevronDown size={18} />
-                    )}
-                  </button> */}
-                  <div className="flex items-center space-x-2">
-                    {/* View Campaign Details */}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Link
-                          href={`/brand/active-campaign/view-campaign?id=${c.id}`}
-                          className="p-2 bg-gray-100 text-gray-800 rounded-full hover:bg-gray-200 focus:outline-none"
-                        >
-                          <HiOutlineEye size={18} />
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent>View Campaign</TooltipContent>
-                    </Tooltip>
+                    >
+                      {c.isActive === 1 ? "Active" : "Inactive"}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap align-top">
+                    {formatDate(c.timeline.startDate)} –{" "}
+                    {formatDate(c.timeline.endDate)}
+                  </td>
+                  <td className="px-6 py-4 text-center align-top">
+                    {c.applicantCount ?? "0"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap align-top">
+                    <div className="flex items-center space-x-2">
+                      {/* View Campaign Details */}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Link
+                            href={`/brand/active-campaign/view-campaign?id=${c.id}`}
+                            className="p-2 bg-gray-100 text-gray-800 rounded-full hover:bg-gray-200 focus:outline-none"
+                          >
+                            <HiOutlineEye size={18} />
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent>View Campaign</TooltipContent>
+                      </Tooltip>
 
-                    {/* View Applied Influencers */}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Link
-                          href={`/brand/active-campaign/applied-inf?id=${c.id}`}
-                          className="relative flex items-center p-2 bg-gray-100 text-gray-800 rounded-full hover:bg-gray-200 focus:outline-none"
-                        >
-                          <HiOutlineUserGroup size={18} />
-                          {c.applicantCount > 0 && (
-                            <span className="absolute -top-1 -right-1 inline-flex items-center justify-center w-4 h-4 text-xs font-semibold text-white bg-[#ef2f5b] rounded-full">
-                              {c.applicantCount}
-                            </span>
-                          )}
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent>View Influencers</TooltipContent>
-                    </Tooltip>
-                  </div>
-                </td>
-              </tr>
-              {/* {expandedIds.has(c.id) && (
-                <tr className={`${idx % 2 === 0 ? "bg-indigo-50" : "bg-indigo-100"}`}>
-                  <td colSpan={5} className="px-6 py-4">
-                    <div className="text-gray-800">
-                      <p className="font-medium">Influencers Applied:</p>
-                      <p>{c.applicantCount ?? "0"}</p>
+                      {/* View Applied Influencers */}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Link
+                            href={`/brand/active-campaign/applied-inf?id=${c.id}&name=${encodeURIComponent(c.productOrServiceName)}`}
+                            className="relative flex items-center p-2 bg-gray-100 text-gray-800 rounded-full hover:bg-gray-200 focus:outline-none"
+                          >
+                            <HiOutlineUserGroup size={18} />
+                            {c.applicantCount > 0 && (
+                              <span className="absolute -top-1 -right-1 inline-flex items-center justify-center w-4 h-4 text-xs font-semibold text-white bg-[#ef2f5b] rounded-full">
+                                {c.applicantCount}
+                              </span>
+                            )}
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent>View Influencers</TooltipContent>
+                      </Tooltip>
                     </div>
                   </td>
                 </tr>
-              )} */}
-            </React.Fragment>
-          ))}
-        </tbody>
-      </table>
+              </React.Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
+
 
 function Pagination({ currentPage, totalPages, onPrev, onNext }: any) {
   return (

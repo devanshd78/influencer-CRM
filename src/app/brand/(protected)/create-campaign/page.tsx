@@ -10,10 +10,8 @@ import {
   HiOutlineCurrencyDollar,
   HiOutlinePlus,
   HiOutlinePhotograph,
-  HiOutlineDocument,
 } from "react-icons/hi";
 import dynamic from "next/dynamic";
-import { StylesConfig } from "react-select";
 import { get, post } from "@/lib/api";
 
 // shadcn/ui components
@@ -32,13 +30,13 @@ const ReactSelect = dynamic(() => import("react-select"), { ssr: false });
 
 type GenderOption = "Male" | "Female" | "All";
 const GENDER_OPTIONS: GenderOption[] = ["Male", "Female", "All"];
-const GOAL_OPTIONS = ["Brand Awareness", "Sales", "Engagement"];
 
 interface InterestOption { _id: string; name: string; }
 
 export default function CreateCampaignPage() {
   const router = useRouter();
-  // ─── state ─────────────────────────────────────────────────
+
+  // ── state ─────────────────────────────────────────────────
   const [productName, setProductName] = useState("");
   const [description, setDescription] = useState("");
   const [productImages, setProductImages] = useState<File[]>([]);
@@ -56,14 +54,35 @@ export default function CreateCampaignPage() {
   const [additionalNotes, setAdditionalNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ─── fetch interest options ─────────────────────────────────
+  // ── fetch interest options ─────────────────────────────────
   useEffect(() => {
     get<InterestOption[]>("/interest/getlist")
       .then(setInterestOptions)
       .catch(console.error);
   }, []);
 
-  // ─── handlers & reset ───────────────────────────────────────
+  // ── toast helper with gradient-clipped icon ─────────────────
+  const toast = (opts: {
+    icon: "success" | "error" | "warning" | "info";
+    title: string;
+    text?: string;
+  }) =>
+    Swal.fire({
+      ...opts,
+      showConfirmButton: false,
+      timer: 1200,
+      timerProgressBar: true,
+      background: "white",
+      customClass: {
+        icon: `
+          bg-gradient-to-r from-[#FFA135] to-[#FF7236]
+          bg-clip-text text-transparent
+        `,
+        popup: "rounded-lg border border-gray-200",
+      },
+    });
+
+  // ── handlers & reset ───────────────────────────────────────
   const handleProductImages = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) setProductImages(Array.from(e.target.files));
   };
@@ -87,7 +106,7 @@ export default function CreateCampaignPage() {
     setAdditionalNotes("");
   };
 
-  // ─── submit ─────────────────────────────────────────────────
+  // ── submit ─────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // validation
@@ -105,14 +124,14 @@ export default function CreateCampaignPage() {
       !timeline.end ||
       (!creativeBriefText.trim() && !useFileUploadForBrief)
     ) {
-      return Swal.fire({
+      return toast({
         icon: "error",
         title: "Missing Fields",
         text: "Please complete all required fields.",
       });
     }
     if (Number(ageRange.min) > Number(ageRange.max)) {
-      return Swal.fire({
+      return toast({
         icon: "error",
         title: "Invalid Age Range",
         text: "Min Age cannot exceed Max Age.",
@@ -146,29 +165,39 @@ export default function CreateCampaignPage() {
       }
 
       await post("/campaign/create", formData);
-      await Swal.fire({ icon: "success", title: "Campaign Created", text: "Successfully created." });
+      toast({
+        icon: "success",
+        title: "Campaign Created",
+        text: "Successfully created!",
+      });
       router.push("/brand/active-campaign");
       resetForm();
     } catch (err: any) {
-      Swal.fire({ icon: "error", title: "Error", text: err.response.data.message || "Try again." });
+      toast({
+        icon: "error",
+        title: "Error",
+        text: err?.response?.data?.message || "Please try again.",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // ─── react-select styles ────────────────────────────────────
-  const selectStyles: StylesConfig<any, boolean> = {
-    control: base => ({ ...base, minHeight: 40, borderColor: "#E2E8F0", boxShadow: "none" }),
-    option: (base, { isFocused }) => ({ ...base, background: isFocused ? "#F1F5F9" : "white" }),
+  // ── react-select styles ────────────────────────────────────
+  const selectStyles = {
+    control: (base: any) => ({ ...base, minHeight: 40, borderColor: "#E2E8F0", boxShadow: "none" }),
+    option: (base: any, { isFocused }: any) => ({ ...base, background: isFocused ? "#F1F5F9" : "white" }),
   };
 
   return (
     <div className="max-w-3xl mx-auto py-10">
-      <h1 className="text-2xl font-medium text-gray-900 mb-8">Create New Campaign</h1>
+      <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#FFA135] to-[#FF7236] mb-8">
+        Create New Campaign
+      </h1>
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-10 bg-white p-6 rounded-lg border border-gray-200"
+        className="space-y-10 bg-white p-8 rounded-lg shadow-sm border border-gray-200"
       >
         {/* Section 1: Product / Service Info */}
         <Card className="border-gray-200">
@@ -212,17 +241,14 @@ export default function CreateCampaignPage() {
               />
               {productImages.length > 0 && (
                 <div className="mt-2 grid grid-cols-3 gap-4">
-                  {productImages.map((file, idx) => {
-                    const url = URL.createObjectURL(file);
-                    return (
-                      <img
-                        key={idx}
-                        src={url}
-                        alt={file.name}
-                        className="h-24 w-full object-cover rounded-md border"
-                      />
-                    );
-                  })}
+                  {productImages.map((file, idx) => (
+                    <img
+                      key={idx}
+                      src={URL.createObjectURL(file)}
+                      alt={file.name}
+                      className="h-24 w-full object-cover rounded-md border"
+                    />
+                  ))}
                 </div>
               )}
             </div>
@@ -259,12 +285,12 @@ export default function CreateCampaignPage() {
             />
 
             <div className="grid w-full max-w-sm gap-3">
+              <Label className="text-sm text-gray-700">Gender</Label>
               <select
-                id="gender"
                 value={selectedGender}
                 onChange={e => setSelectedGender(e.target.value as GenderOption)}
                 required
-                className="block w-full rounded-md border border-gray-300 py-2 px-3 text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+                className="block w-full rounded-md border border-gray-300 py-2 px-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#FFA135]"
               >
                 <option value="" disabled>
                   Select gender
@@ -308,19 +334,18 @@ export default function CreateCampaignPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="grid sm:grid-cols-2 gap-8">
-            <div className="grid w-full max-w-sm gap-3">
-              <Label htmlFor="goal">Goal</Label>
+            <div>
+              <Label className="text-sm text-gray-700">Goal</Label>
               <select
-                id="goal"
                 value={selectedGoal}
                 onChange={e => setSelectedGoal(e.target.value)}
                 required
-                className="block w-full rounded-md border border-gray-300 py-2 px-3 text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+                className="block w-full rounded-md border border-gray-300 py-2 px-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#FFA135]"
               >
                 <option value="" disabled>
                   Pick a goal
                 </option>
-                {GOAL_OPTIONS.map(g => (
+                {["Brand Awareness", "Sales", "Engagement"].map(g => (
                   <option key={g} value={g}>
                     {g}
                   </option>
@@ -329,21 +354,18 @@ export default function CreateCampaignPage() {
             </div>
 
             <div>
-              <Label htmlFor="budget" className="text-sm text-gray-700">
-                Budget (USD)
-              </Label>
-              <div className="mt-1 flex rounded-md border border-gray-300 overflow-hidden">
+              <Label className="text-sm text-gray-700">Budget (USD)</Label>
+              <div className="mt-1 flex rounded-md border border-gray-300 overflow-hidden focus-within:ring-2 focus-within:ring-offset-1 focus-within:ring-[#FFA135]">
                 <span className="inline-flex items-center bg-gray-100 px-3 text-gray-600">
                   <HiOutlineCurrencyDollar />
                 </span>
                 <input
-                  id="budget"
                   type="number"
                   min={0}
                   placeholder="e.g. 5000"
                   value={budget}
                   onChange={e => setBudget(e.target.value === "" ? "" : +e.target.value)}
-                  className="w-full border-none py-2 px-3 focus:ring-0 text-gray-900"
+                  className="w-full border-none py-2 px-3 focus:outline-none text-gray-900"
                   required
                 />
               </div>
@@ -351,13 +373,13 @@ export default function CreateCampaignPage() {
 
             <div>
               <Label className="text-sm text-gray-700">Start Date</Label>
-              <div className="mt-1 relative">
+              <div className="mt-1 relative focus-within:ring-2 focus-within:ring-offset-1 focus-within:ring-[#FFA135] rounded-md overflow-hidden">
                 <HiOutlineCalendar className="absolute left-3 top-2 text-gray-400" />
                 <input
                   type="date"
                   value={timeline.start}
                   onChange={e => setTimeline({ ...timeline, start: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md py-2 pl-10 pr-3 text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-md py-2 pl-10 pr-3 text-gray-900 focus:outline-none"
                   required
                 />
               </div>
@@ -365,13 +387,13 @@ export default function CreateCampaignPage() {
 
             <div>
               <Label className="text-sm text-gray-700">End Date</Label>
-              <div className="mt-1 relative">
+              <div className="mt-1 relative focus-within:ring-2 focus-within:ring-offset-1 focus-within:ring-[#FFA135] rounded-md overflow-hidden">
                 <HiOutlineCalendar className="absolute left-3 top-2 text-gray-400" />
                 <input
                   type="date"
                   value={timeline.end}
                   onChange={e => setTimeline({ ...timeline, end: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md py-2 pl-10 pr-3 text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-md py-2 pl-10 pr-3 text-gray-900 focus:outline-none"
                   required
                 />
               </div>
@@ -455,24 +477,24 @@ export default function CreateCampaignPage() {
 
         {/* Actions */}
         <div className="flex justify-end space-x-4 pt-4">
-          <Button size="sm" variant="outline" onClick={resetForm} disabled={isSubmitting}>
+          <Button size="lg" variant="outline" onClick={resetForm} disabled={isSubmitting}>
             Reset
           </Button>
-          <Button
-            size="sm"
+          <button
             type="submit"
             disabled={isSubmitting}
-            className="
-      bg-[#EF2F5B] text-white
-      hover:bg-[#D32D53]
-      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#EF2F5B]
-      transition
-    "
+            className={`
+              inline-flex items-center justify-center
+              bg-gradient-to-r from-[#FFA135] to-[#FF7236]
+              text-white font-semibold
+              px-6 py-2 rounded-lg
+              transition-transform duration-200
+              ${isSubmitting ? "opacity-50 cursor-not-allowed" : "hover:scale-105"}
+            `}
           >
             {isSubmitting ? "Submitting…" : "Create Campaign"}
-          </Button>
+          </button>
         </div>
-
       </form>
     </div>
   );

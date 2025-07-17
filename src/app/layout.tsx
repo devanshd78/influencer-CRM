@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import { Lexend } from 'next/font/google';
 
 export const metadata: Metadata = {
-  title: 'Collabglam',
+  title: 'CollabGlam',
   description: 'A platform for seamless collaborations between brands and influencers.',
   icons: {
     icon: '/logo.png',

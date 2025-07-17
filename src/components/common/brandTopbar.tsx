@@ -127,8 +127,7 @@ export default function BrandTopbar({
 
   return (
     <header className="w-full bg-white shadow-sm relative z-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-end h-16 px-4 border-b border-gray-200">
           {/* Left: Hamburger + Search */}
           <div className="flex items-center space-x-4">
             <button
@@ -139,38 +138,6 @@ export default function BrandTopbar({
             </button>
 
             <div className="relative">
-              {/* Mobile: search icon */}
-              <HiSearch
-                size={20}
-                className="text-gray-600 cursor-pointer md:hidden"
-                onClick={() => setSearchOpen(true)}
-              />
-              {/* Input: desktop always, mobile when open */}
-              <div
-                className={`flex items-center border border-gray-200 rounded-md bg-gray-100
-                ${searchOpen ? "absolute left-0 top-full mt-1 w-64" : "hidden md:flex"}
-              `}
-              >
-                <HiSearch className="ml-2 text-gray-400" size={18} />
-                <input
-                  type="text"
-                  className="flex-1 px-2 py-1 bg-transparent text-sm focus:outline-none"
-                  placeholder="Search influencers, campaigns..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                {searchOpen && (
-                  <button
-                    onClick={() => {
-                      setSearchOpen(false);
-                      setSearchQuery("");
-                    }}
-                    className="p-1"
-                  >
-                    <HiX size={18} className="text-gray-600" />
-                  </button>
-                )}
-              </div>
 
               {/* Search results */}
               {(searchOpen || isDesktop) && searchQuery && (
@@ -184,16 +151,16 @@ export default function BrandTopbar({
                         href={r.url}
                         className="block px-4 py-2 hover:bg-gray-50"
                       >
-                        <p className="text-sm font-medium text-gray-800">
+                        <p className="text-md font-medium text-gray-800">
                           {r.title}
                         </p>
                         {r.subtitle && (
-                          <p className="text-xs text-gray-500">{r.subtitle}</p>
+                          <p className="text-sm text-gray-500">{r.subtitle}</p>
                         )}
                       </a>
                     ))
                   ) : (
-                    <div className="p-3 text-gray-500 text-sm">
+                    <div className="p-3 text-gray-500 text-md">
                       No results found
                     </div>
                   )}
@@ -206,11 +173,11 @@ export default function BrandTopbar({
           <div className="flex items-center space-x-6">
             {!loading && !error && walletBalance !== null && (
               <button
-                className="flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-md text-sm"
+                className="flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-md text-md"
                 title="Wallet balance"
               >
                 <HiCreditCard size={20} className="text-gray-600" />
-                <span className="font-medium text-gray-800">
+                <span className="font-large text-gray-800">
                   ${walletBalance.toFixed(2)}
                 </span>
               </button>
@@ -221,7 +188,7 @@ export default function BrandTopbar({
             ) : error ? (
               <span className="text-red-500 text-sm">{error}</span>
             ) : (
-              <span className="text-gray-800 font-medium text-sm">
+              <span className="text-gray-800 font-medium text-lg">
                 {brandName}
               </span>
             )}
@@ -235,23 +202,23 @@ export default function BrandTopbar({
                 <HiChevronDown size={16} className="text-gray-600" />
               </button>
               {menuOpen && !loading && !error && (
-                <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-10">
                   <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="text-sm font-semibold text-gray-700">
+                    <p className="text-md font-semibold text-gray-700">
                       {brandName}
                     </p>
-                    <p className="text-xs text-gray-500">{email}</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500">{email}</p>
+                    <p className="text-md text-gray-500">
                       Plan:{" "}
                       {subscriptionName.charAt(0).toUpperCase() +
                         subscriptionName.slice(1)}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-md text-gray-500">
                       Expires: {formattedExpiry}
                     </p>
                   </div>
                   <ul className="py-1">
-                    <li className="px-4 py-2 hover:bg-gray-100 text-sm">
+                    <li className="px-4 py-2 hover:bg-gray-100 text-md">
                       <a href="/brand/profile">View Profile</a>
                     </li>
                   </ul>
@@ -260,7 +227,6 @@ export default function BrandTopbar({
             </div>
           </div>
         </div>
-      </div>
     </header>
   );
 }

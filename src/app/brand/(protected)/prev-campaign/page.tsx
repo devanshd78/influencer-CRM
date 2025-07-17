@@ -80,7 +80,7 @@ export default function PrevCampaignPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-100">
+      <div className="flex h-screen items-center justify-center">
         <div className="animate-pulse rounded-lg bg-gray-200 p-6 text-gray-500">
           Loading previous campaigns…
         </div>
@@ -90,7 +90,7 @@ export default function PrevCampaignPage() {
 
   if (error) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-100">
+      <div className="flex h-screen items-center justify-center">
         <p className="rounded-lg bg-red-100 p-6 text-red-600">{error}</p>
       </div>
     );
@@ -98,14 +98,14 @@ export default function PrevCampaignPage() {
 
   if (campaigns.length === 0) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-100">
+      <div className="flex h-screen items-center justify-center">
         <p className="text-gray-700 text-2xl">No Previous Campaigns</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-full px-4 py-6 sm:px-6 lg:px-8 bg-gray-50">
+    <div className="min-h-full px-4 py-6 sm:px-6 lg:px-8">
       <header className="mb-6 sm:mb-8 lg:mb-10 text-center sm:text-left">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
           Previous Campaigns

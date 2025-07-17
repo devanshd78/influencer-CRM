@@ -64,21 +64,7 @@ const toast = (opts: {
     showConfirmButton: false,
     timer: 1000,
     timerProgressBar: true,
-
-    background: "white",
-    customClass: {
-      popup: `
-        text-gray-900
-        rounded-lg
-      `,
-      icon: `
-        bg-gradient-to-r from-[#FFA135] to-[#FF7236]
-        text-transparent
-        bg-clip-text
-      `,
-    },
   });
-
 
 
 interface ForgotModalProps {
@@ -93,6 +79,7 @@ function ForgotPasswordModal({ role, onClose }: ForgotModalProps) {
   const [newPwd, setNewPwd] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetToken, setResetToken] = useState<string | null>(null);
 
   useEffect(() => {
     document.body.style.overflow = loading ? "hidden" : "";
@@ -107,8 +94,8 @@ function ForgotPasswordModal({ role, onClose }: ForgotModalProps) {
     try {
       const endpoint =
         role === "brand"
-          ? "/brand/forgot-password/send-otp"
-          : "/influencer/forgot-password/send-otp";
+          ? "/brand/resetotp"
+          : "/influencer/sendOtp";
       await post(endpoint, { email });
       toast({ icon: "success", title: "OTP sent to your email" });
       setStep("otp");
@@ -129,11 +116,21 @@ function ForgotPasswordModal({ role, onClose }: ForgotModalProps) {
     }
     setLoading(true);
     try {
-      const endpoint =
-        role === "brand"
-          ? "/brand/forgot-password/verify-otp"
-          : "/influencer/forgot-password/verify-otp";
-      await post(endpoint, { email, otp });
+      const endpoint = role === "brand" ? "/brand/resetVerify" : "/influencer/verifyOtp";
+      const res = await post(endpoint, { email, otp });
+
+      // API sample:
+      // { "message": "OTP verified", "resetToken": "<JWT>" }
+      const resetTokenFromRes =
+        res?.resetToken ??
+        res?.data?.resetToken ??
+        (typeof res === "object" && "resetToken" in res ? (res as any).resetToken : null);
+
+      if (!resetTokenFromRes) {
+        throw new Error("Verification succeeded but no resetToken returned.");
+      }
+      setResetToken(resetTokenFromRes);
+
       toast({ icon: "success", title: "OTP verified" });
       setStep("reset");
     } catch (err: any) {
@@ -144,7 +141,7 @@ function ForgotPasswordModal({ role, onClose }: ForgotModalProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const resetPassword = async () => {
     if (!newPwd || !confirmPwd) {
@@ -155,13 +152,16 @@ function ForgotPasswordModal({ role, onClose }: ForgotModalProps) {
       toast({ icon: "error", title: "Passwords must match" });
       return;
     }
+    if (!resetToken) {
+      toast({ icon: "error", title: "Verification expired. Please verify OTP again." });
+      return;
+    }
+
     setLoading(true);
     try {
-      const endpoint =
-        role === "brand"
-          ? "/brand/forgot-password/reset"
-          : "/influencer/forgot-password/reset";
-      await post(endpoint, { email, otp, newPassword: newPwd });
+      const endpoint = role === "brand" ? "/brand/updatePassword" : "/influencer/updatePassword";
+      // If API needs email too, include it.
+      await post(endpoint, { resetToken, newPassword: newPwd, confirmPassword: confirmPwd });
       toast({ icon: "success", title: "Password has been reset" });
       onClose();
     } catch (err: any) {
@@ -173,6 +173,7 @@ function ForgotPasswordModal({ role, onClose }: ForgotModalProps) {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
@@ -267,6 +268,7 @@ function ForgotPasswordModal({ role, onClose }: ForgotModalProps) {
               value={newPwd}
               onChange={(e) => setNewPwd(e.target.value)}
               required
+              className="mb-5"
             />
             <FloatingLabelInput
               id="confirmPassword"
@@ -394,7 +396,7 @@ function BrandLoginForm({ setActiveTab, onForgot }: LoginFormProps) {
         "
         disabled={isSubmitting}
       >
-        {isSubmitting ? "Logging In…" : "Login"}
+        {isSubmitting ? "Logging in…" : "Login"}
       </Button>
     </form>
   );
@@ -509,17 +511,23 @@ function BrandSignupForm({ setActiveTab, countries }: SignupProps) {
   const [brandConfirmPwd, setBrandConfirmPwd] = useState("");
   const [selectedCountry, setSelectedCountry] = useState<CountryOption | null>(null);
   const [selectedCode, setSelectedCode] = useState<CountryOption | null>(null);
-
+  
   const countryOptions = useMemo(() => buildCountryOptions(countries), [countries]);
-  const codeOptions = useMemo(
-    () =>
-      countries.map((c) => ({
-        value: c.callingCode,
-        label: `${c.callingCode}`,
-        country: c,
-      })),
-    [countries]
-  );
+  const codeOptions: CountryOption[] = useMemo(() => {
+    const opts = countries.map((c) => ({
+      value: c.callingCode, // submit the dial code
+      label: `${c.callingCode}`, // what user sees
+      country: c,
+    }));
+    
+    // Move US to top (if present)
+    const usIdx = opts.findIndex((o) => o.country.countryCode === "US");
+    if (usIdx > -1) {
+      const [us] = opts.splice(usIdx, 1);
+      opts.unshift(us);
+    }
+    return opts;
+  }, [countries]);
 
   const sendOtp = async () => {
     if (!brandEmail) {
@@ -688,7 +696,6 @@ function BrandSignupForm({ setActiveTab, countries }: SignupProps) {
         <Select
           inputId="brandCode"
           options={codeOptions}
-          placeholder="Code"
           value={selectedCode}
           onChange={(opt) => setSelectedCode(opt as CountryOption)}
           filterOption={filterByCountryName}
@@ -755,7 +762,7 @@ function BrandSignupForm({ setActiveTab, countries }: SignupProps) {
         "
         disabled={isSubmitting}
       >
-        {isSubmitting ? "Signing Up…" : "Sign Up as Brand"}
+        {isSubmitting ? "Signing up…" : "Sign up"}
       </Button>
     </form>
   );
@@ -1063,6 +1070,7 @@ function InfluencerSignupForm({ setActiveTab, countries }: SignupProps) {
         value={infBio}
         onChange={(e) => setInfBio(e.target.value)}
         required
+        maxLength={150}
       />
       <Button
         type="submit"
@@ -1076,7 +1084,7 @@ function InfluencerSignupForm({ setActiveTab, countries }: SignupProps) {
         "
         disabled={isSubmitting}
       >
-        {isSubmitting ? "Signing Up…" : "Sign Up as Influencer"}
+        {isSubmitting ? "Signing up…" : "Sign up"}
       </Button>
     </form>
   );

@@ -20,7 +20,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         />
 
         {/* Apply background only to the children wrapper */}
-        <main className="flex-1 overflow-y-auto bg-blue-100">
+        <main className="flex-1 overflow-y-auto bg-gradient-to-r
+      from-[#FF7241]/20
+      to-[#FFA135]/40">
           {children}
         </main>
       </div>

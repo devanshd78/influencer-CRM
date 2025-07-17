@@ -1,3 +1,57 @@
+// import React, { InputHTMLAttributes } from "react";
+
+// interface FloatingLabelInputProps extends InputHTMLAttributes<HTMLInputElement> {
+//   label: string;
+// }
+
+// export function FloatingLabelInput({
+//   id,
+//   label,
+//   className = "",
+//   ...props
+// }: FloatingLabelInputProps) {
+//   const gradientBorder = (width: number) => ({
+//     borderWidth: width,
+//     borderStyle: "solid",
+//     borderImage: "linear-gradient(90deg,#FFA135 0%,#FF7236 100%) 1"
+//   });
+
+//   return (
+//     <div className={`relative w-full group ${className}`}>
+//       <input
+//         id={id}
+//         {...props}
+//         placeholder=" "
+//         className="
+//           peer block w-full
+//           !rounded-full bg-white
+//           px-4 py-2 text-gray-900
+//           focus:outline-none
+//           transition
+//         "
+//         // pill-shaped gradient border
+//         style={gradientBorder(2)}
+//       />
+
+//       <label
+//         htmlFor={id}
+//         className="
+//           absolute left-4 -top-2
+//           bg-white px-2
+//           text-sm text-gray-500
+//           transition-all
+//           peer-placeholder-shown:top-3 peer-placeholder-shown:text-base
+//           peer-focus:-top-2 peer-focus:text-sm
+//         "
+//         // pill with gradient border (width 1)
+//         style={{ ...gradientBorder(0) }}
+//       >
+//         {label}
+//       </label>
+//     </div>
+//   );
+// }
+
 // components/ui/FloatingLabelInput.tsx
 import React, { InputHTMLAttributes } from "react";
 
@@ -13,12 +67,6 @@ export function FloatingLabelInput({
 }: FloatingLabelInputProps) {
   return (
     <div className={`relative w-full group ${className}`}>
-      {/* 
-        Outer “border” container:
-        - p-[2px] gives a 2px thick frame
-        - bg-gray-300 by default
-        - on focus-within: switches to your gradient
-      */}
       <div
         className="
           overflow-hidden rounded-md
@@ -29,7 +77,6 @@ export function FloatingLabelInput({
           group-focus-within:to-[#FF7236]
         "
       >
-
         <input
           id={id}
           placeholder=" "
