@@ -1,4 +1,3 @@
-// app/brand/dashboard/create/page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -13,6 +12,7 @@ import {
 } from "react-icons/hi";
 import dynamic from "next/dynamic";
 import { get, post } from "@/lib/api";
+import { useRouter, useSearchParams } from "next/navigation";
 
 // shadcn/ui components
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -23,7 +23,6 @@ import { Label } from "@/components/ui/label";
 
 // floating-label text input
 import { FloatingLabelInput } from "@/components/common/FloatingLabelInput";
-import { useRouter } from "next/navigation";
 
 // dynamic react-select for interests
 const ReactSelect = dynamic(() => import("react-select"), { ssr: false });
@@ -31,20 +30,46 @@ const ReactSelect = dynamic(() => import("react-select"), { ssr: false });
 type GenderOption = "Male" | "Female" | "All";
 const GENDER_OPTIONS: GenderOption[] = ["Male", "Female", "All"];
 
-interface InterestOption { _id: string; name: string; }
+interface InterestOption {
+  _id: string;
+  name: string;
+}
 
-export default function CreateCampaignPage() {
+// payload returned when editing
+interface CampaignEditPayload {
+  productOrServiceName: string;
+  description: string;
+  images: string[];  // array of image URLs
+  targetAudience: {
+    age: { MinAge: number; MaxAge: number };
+    gender: 0 | 1 | 2;
+    location: string;
+  };
+  interestId: { _id: string; name: string }[];
+  goal: string;
+  budget: number;
+  timeline: { startDate: string; endDate: string };
+  creativeBriefText: string;
+  additionalNotes: string;
+}
+
+export default function CampaignFormPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const campaignId = searchParams.get("id");
+  const isEditMode = Boolean(campaignId);
 
   // ── state ─────────────────────────────────────────────────
+  const [isLoading, setIsLoading] = useState(isEditMode);
   const [productName, setProductName] = useState("");
   const [description, setDescription] = useState("");
+  const [existingImages, setExistingImages] = useState<string[]>([]);
   const [productImages, setProductImages] = useState<File[]>([]);
   const [ageRange, setAgeRange] = useState<{ min: number | ""; max: number | "" }>({ min: "", max: "" });
   const [selectedGender, setSelectedGender] = useState<GenderOption | "">("");
   const [location, setLocation] = useState("");
   const [interestOptions, setInterestOptions] = useState<InterestOption[]>([]);
-  const [selectedInterests, setSelectedInterests] = useState<any[]>([]);
+  const [selectedInterests, setSelectedInterests] = useState<{ value: string; label: string }[]>([]);
   const [selectedGoal, setSelectedGoal] = useState<string>("");
   const [budget, setBudget] = useState<number | "">("");
   const [timeline, setTimeline] = useState<{ start: string; end: string }>({ start: "", end: "" });
@@ -57,11 +82,60 @@ export default function CreateCampaignPage() {
   // ── fetch interest options ─────────────────────────────────
   useEffect(() => {
     get<InterestOption[]>("/interest/getlist")
-      .then(setInterestOptions)
+      .then((opts) => setInterestOptions(opts))
       .catch(console.error);
   }, []);
 
-  // ── toast helper with gradient-clipped icon ─────────────────
+  // ── fetch campaign data if editing ─────────────────────────
+  useEffect(() => {
+    if (!isEditMode || !campaignId || interestOptions.length === 0) return;
+    setIsLoading(true);
+
+    get<CampaignEditPayload>(`/campaign/id?id=${campaignId}`)
+      .then((data) => {
+        // 1. Basic fields
+        setProductName(data.productOrServiceName);
+        setDescription(data.description);
+        setAdditionalNotes(data.additionalNotes);
+        setCreativeBriefText(data.creativeBriefText);
+
+        // 2. Existing images
+        setExistingImages(data.images || []);
+
+        // 3. Audience
+        setAgeRange({
+          min: data.targetAudience.age.MinAge,
+          max: data.targetAudience.age.MaxAge,
+        });
+        setSelectedGender(
+          data.targetAudience.gender === 0
+            ? "Male"
+            : data.targetAudience.gender === 1
+              ? "Female"
+              : "All"
+        );
+        setLocation(data.targetAudience.location);
+
+        // 4. Interests → ReactSelect options
+        setSelectedInterests(
+          data.interestId.map((i) => ({ value: i._id, label: i.name }))
+        );
+
+        // 5. Goal & Budget
+        setSelectedGoal(data.goal);
+        setBudget(data.budget);
+
+        // 6. Timeline (YYYY-MM-DD)
+        setTimeline({
+          start: data.timeline.startDate.split("T")[0],
+          end: data.timeline.endDate.split("T")[0],
+        });
+      })
+      .catch((err) => console.error("Failed to load campaign for editing", err))
+      .finally(() => setIsLoading(false));
+  }, [isEditMode, campaignId, interestOptions]);
+
+  // ── toast helper with gradient icon ─────────────────────────
   const toast = (opts: {
     icon: "success" | "error" | "warning" | "info";
     title: string;
@@ -92,6 +166,7 @@ export default function CreateCampaignPage() {
   const resetForm = () => {
     setProductName("");
     setDescription("");
+    setExistingImages([]);
     setProductImages([]);
     setAgeRange({ min: "", max: "" });
     setSelectedGender("");
@@ -109,7 +184,7 @@ export default function CreateCampaignPage() {
   // ── submit ─────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // validation
+    // validation...
     if (
       !productName.trim() ||
       !description.trim() ||
@@ -124,18 +199,10 @@ export default function CreateCampaignPage() {
       !timeline.end ||
       (!creativeBriefText.trim() && !useFileUploadForBrief)
     ) {
-      return toast({
-        icon: "error",
-        title: "Missing Fields",
-        text: "Please complete all required fields.",
-      });
+      return toast({ icon: "error", title: "Missing Fields", text: "Complete all required fields." });
     }
     if (Number(ageRange.min) > Number(ageRange.max)) {
-      return toast({
-        icon: "error",
-        title: "Invalid Age Range",
-        text: "Min Age cannot exceed Max Age.",
-      });
+      return toast({ icon: "error", title: "Invalid Age Range", text: "Min Age cannot exceed Max Age." });
     }
 
     setIsSubmitting(true);
@@ -147,37 +214,41 @@ export default function CreateCampaignPage() {
         "targetAudience",
         JSON.stringify({
           age: { MinAge: ageRange.min, MaxAge: ageRange.max },
-          gender: selectedGender,
+          gender:
+            selectedGender === "Male" ? 0 : selectedGender === "Female" ? 1 : 2,
           location: location.trim(),
         })
       );
-      formData.append("interestId", JSON.stringify(selectedInterests.map(i => i.value)));
+      formData.append("interestId", JSON.stringify(selectedInterests.map((i) => i.value)));
       formData.append("additionalNotes", additionalNotes.trim());
       formData.append("brandId", localStorage.getItem("brandId") || "");
       formData.append("goal", selectedGoal);
       formData.append("budget", String(budget));
-      formData.append("timeline", JSON.stringify({ startDate: timeline.start, endDate: timeline.end }));
-      productImages.forEach(f => formData.append("image", f));
+      formData.append(
+        "timeline",
+        JSON.stringify({ startDate: timeline.start, endDate: timeline.end })
+      );
+
+      // only append new uploads; existingImages remain untouched
+      productImages.forEach((f) => formData.append("image", f));
       if (useFileUploadForBrief) {
-        creativeBriefFiles.forEach(f => formData.append("creativeBrief", f));
+        creativeBriefFiles.forEach((f) => formData.append("creativeBrief", f));
       } else {
         formData.append("creativeBriefText", creativeBriefText.trim());
       }
 
-      await post("/campaign/create", formData);
-      toast({
-        icon: "success",
-        title: "Campaign Created",
-        text: "Successfully created!",
-      });
-      router.push("/brand/active-campaign");
+      if (isEditMode && campaignId) {
+        await post(`/campaign/update?id=${campaignId}`, formData);
+        toast({ icon: "success", title: "Campaign Updated" });
+      } else {
+        await post("/campaign/create", formData);
+        toast({ icon: "success", title: "Campaign Created" });
+      }
+
+      router.push("/brand/created-campaign");
       resetForm();
     } catch (err: any) {
-      toast({
-        icon: "error",
-        title: "Error",
-        text: err?.response?.data?.message || "Please try again.",
-      });
+      toast({ icon: "error", title: "Error", text: err?.response?.data?.message || "Please try again." });
     } finally {
       setIsSubmitting(false);
     }
@@ -189,14 +260,17 @@ export default function CreateCampaignPage() {
     option: (base: any, { isFocused }: any) => ({ ...base, background: isFocused ? "#F1F5F9" : "white" }),
   };
 
+  if (isLoading) {
+    return <div className="flex justify-center items-center py-20">Loading campaign data...</div>;
+  }
+
   return (
     <div className="max-w-3xl mx-auto py-10">
-      <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#FFA135] to-[#FF7236] mb-8">
-        Create New Campaign
+      <h1 className="text-3xl font-extrabold text-gray-800 mb-8">
+        {isEditMode ? "Edit Campaign" : "Create New Campaign"}
       </h1>
 
-      <form
-        onSubmit={handleSubmit}
+      <div
         className="space-y-10 bg-white p-8 rounded-lg shadow-sm border border-gray-200"
       >
         {/* Section 1: Product / Service Info */}
@@ -212,7 +286,7 @@ export default function CreateCampaignPage() {
               label="Product / Service Name"
               type="text"
               value={productName}
-              onChange={e => setProductName(e.target.value)}
+              onChange={(e) => setProductName(e.target.value)}
               required
             />
 
@@ -225,7 +299,7 @@ export default function CreateCampaignPage() {
                 rows={4}
                 placeholder="Briefly describe your product or service"
                 value={description}
-                onChange={e => setDescription(e.target.value)}
+                onChange={(e) => setDescription(e.target.value)}
                 required
               />
             </div>
@@ -239,6 +313,22 @@ export default function CreateCampaignPage() {
                 multiple
                 onChange={handleProductImages}
               />
+
+              {/* show existing images */}
+              {existingImages.length > 0 && (
+                <div className="mt-2 grid grid-cols-3 gap-4">
+                  {existingImages.map((url, idx) => (
+                    <img
+                      key={`existing-${idx}`}
+                      src={url}
+                      alt={`Existing image ${idx + 1}`}
+                      className="h-24 w-full object-cover rounded-md border"
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* show newly picked files */}
               {productImages.length > 0 && (
                 <div className="mt-2 grid grid-cols-3 gap-4">
                   {productImages.map((file, idx) => (
@@ -285,7 +375,6 @@ export default function CreateCampaignPage() {
             />
 
             <div className="grid w-full max-w-sm gap-3">
-              <Label className="text-sm text-gray-700">Gender</Label>
               <select
                 value={selectedGender}
                 onChange={e => setSelectedGender(e.target.value as GenderOption)}
@@ -476,26 +565,33 @@ export default function CreateCampaignPage() {
         </Card>
 
         {/* Actions */}
-        <div className="flex justify-end space-x-4 pt-4">
-          <Button size="lg" variant="outline" onClick={resetForm} disabled={isSubmitting}>
-            Reset
-          </Button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className={`
+        <div className="flex justify-between space-x-4 pt-4">
+          <div className="flex justify-start space-x-4 pt-4">
+            <Button className="bg-gray-200" size="lg" variant="outline" onClick={() => router.back()} disabled={isSubmitting}>
+              Back
+            </Button>
+          </div>
+          <div className="flex justify-end space-x-4 pt-4">
+            <Button size="lg" variant="outline" onClick={resetForm} disabled={isSubmitting}>
+              Reset
+            </Button>
+            <button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className={`
               inline-flex items-center justify-center
               bg-gradient-to-r from-[#FFA135] to-[#FF7236]
               text-white font-semibold
               px-6 py-2 rounded-lg
               transition-transform duration-200
-              ${isSubmitting ? "opacity-50 cursor-not-allowed" : "hover:scale-105"}
-            `}
-          >
-            {isSubmitting ? "Submitting…" : "Create Campaign"}
-          </button>
+              ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}
+              `}
+            >
+              {isSubmitting ? 'Submitting…' : isEditMode ? 'Update Campaign' : 'Create Campaign'}
+            </button>
+          </div>
         </div>
-      </form>
+      </div>
     </div>
   );
 }

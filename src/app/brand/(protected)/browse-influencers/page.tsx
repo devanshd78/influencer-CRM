@@ -1,179 +1,534 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { HiOutlineSearch } from "react-icons/hi";
-import { get } from "@/lib/api";
+import React, { useEffect, useState, useMemo } from "react";
+import { HiOutlineSearch, HiChevronDown, HiChevronUp } from "react-icons/hi";
+import { get, post } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+import { useRouter } from "next/navigation";
 
-interface Interest {
+interface Category {
   _id: string;
   name: string;
+}
+
+interface Subscription {
+  planName: string;
+  startedAt: string;
+  expiresAt?: string;
 }
 
 interface Influencer {
   _id: string;
+  influencerId: string;
   name: string;
-  avatarUrl?: string;
-  interests: string[]; // array of interest _id
-  followerCount?: number;
-  location?: string;
+  email: string;
+  categoryId: string;
+  categoryName?: string;
+  audienceSize?: number;
+  country?: string;
+  platform?: string;
+  malePercentage?: number;
+  femalePercentage?: number;
+  audienceAgeGroup?: string;
+  subscription: Subscription;
 }
 
 export default function BrowseInfluencersPage() {
-  // ─── State ─────────────────────────────────────────────────────────────
-  const [interestOptions, setInterestOptions] = useState<Interest[]>([]);
-  const [selectedInterests, setSelectedInterests] = useState<Set<string>>(new Set());
+  const router = useRouter();
+
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [audienceSize, setAudienceSize] = useState<{ min?: number; max?: number }>({});
+  const [selectedCountry, setSelectedCountry] = useState<string>("all");
+  const [selectedPlatform, setSelectedPlatform] = useState<string>("all");
+  const [ageGroup, setAgeGroup] = useState<string>("all");
+  const [genderRange, setGenderRange] = useState<{ min?: number; max?: number }>({});
   const [influencers, setInfluencers] = useState<Influencer[]>([]);
-  const [filtered, setFiltered] = useState<Influencer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // ─── Fetch Interest Options from API ────────────────────────────────────
-  useEffect(() => {
-    async function fetchInterests() {
-      try {
-        // returns array of { _id, name }
-        const data: Interest[] = await get("/interest/getlist");
-        setInterestOptions(data);
-      } catch (error) {
-        console.error("Error loading interests:", error);
-      }
-    }
-    fetchInterests();
-  }, []);
+  // Temp state for filters
+  const [tempCategories, setTempCategories] = useState<string[]>([]);
+  const [tempAudienceSize, setTempAudienceSize] = useState<{ min?: number; max?: number }>({});
+  const [tempCountry, setTempCountry] = useState<string>("all");
+  const [tempPlatform, setTempPlatform] = useState<string>("all");
+  const [tempAgeGroup, setTempAgeGroup] = useState<string>("all");
+  const [tempGenderRange, setTempGenderRange] = useState<{ min?: number; max?: number }>({});
 
-  // ─── Fetch Influencers from API ─────────────────────────────────────────
+  // Accordion state
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    category: true,
+    audience: false,
+    country: false,
+    platform: false,
+    gender: false,
+    age: false,
+  });
+
+  const toggleSection = (key: string) => {
+    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
   useEffect(() => {
     (async () => {
       try {
-        const data: Influencer[] = await get("/influencer/list", {});
-        setInfluencers(data);
-        setFiltered(data);
-      } catch (error) {
-        console.error("Error loading influencers:", error);
+        const res = await get<Category[]>("/interest/getlist");
+        setCategories(res);
+      } catch {
+        setError("Unable to load categories.");
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    (async () => {
+      try {
+        const res = await post<Influencer[]>("/influencer/getlist", {});
+        setInfluencers(res);
+      } catch {
+        setError("Unable to load influencers.");
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
-  // ─── Filter Logic ───────────────────────────────────────────────────────
-  useEffect(() => {
-    if (selectedInterests.size === 0) {
-      setFiltered(influencers);
-    } else {
-      setFiltered(
-        influencers.filter((inf) =>
-          inf.interests.some((i) => selectedInterests.has(i))
-        )
+  const applyFilters = () => {
+    setSelectedCategories(tempCategories);
+    setAudienceSize(tempAudienceSize);
+    setSelectedCountry(tempCountry);
+    setSelectedPlatform(tempPlatform);
+    setAgeGroup(tempAgeGroup);
+    setGenderRange(tempGenderRange);
+  };
+
+  const filtered = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return influencers.filter(inf => {
+      const matchesCategory =
+        selectedCategories.length === 0 ||
+        selectedCategories.includes(inf.categoryId);
+
+      const matchesSearch =
+        !q ||
+        inf.name?.toLowerCase().includes(q) ||
+        inf.email?.toLowerCase().includes(q);
+
+      const matchesSize =
+        (!audienceSize.min || (inf.audienceSize ?? 0) >= audienceSize.min) &&
+        (!audienceSize.max || (inf.audienceSize ?? 0) <= audienceSize.max);
+
+      const matchesCountry =
+        selectedCountry === "all" || inf.country === selectedCountry;
+
+      const matchesPlatform =
+        selectedPlatform === "all" || inf.platform === selectedPlatform;
+
+      const matchesAge =
+        ageGroup === "all" || inf.audienceAgeGroup === ageGroup;
+
+      const matchesGender =
+        (!genderRange.min || (inf.malePercentage ?? 0) >= genderRange.min) &&
+        (!genderRange.max || (inf.malePercentage ?? 0) <= genderRange.max);
+
+      return (
+        matchesCategory &&
+        matchesSearch &&
+        matchesSize &&
+        matchesCountry &&
+        matchesPlatform &&
+        matchesAge &&
+        matchesGender
       );
-    }
-  }, [selectedInterests, influencers]);
-
-  const toggleInterest = (id: string) =>
-    setSelectedInterests((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
     });
+  }, [
+    influencers,
+    selectedCategories,
+    searchQuery,
+    audienceSize,
+    selectedCountry,
+    selectedPlatform,
+    ageGroup,
+    genderRange,
+  ]);
 
-  // ─── Loading / Empty States ─────────────────────────────────────────────
-  if (loading) {
+
+  if (loading)
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-100">
-        <div className="animate-pulse rounded-lg bg-gray-200 p-6 text-gray-500">
-          Loading…
-        </div>
+      <div className="flex h-screen items-center justify-center">
+        <p>Loading influencers...</p>
       </div>
     );
-  }
+  if (error)
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p className="text-red-600">{error}</p>
+      </div>
+    );
 
   return (
-    <div className="min-h-full bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-4">
-          Browse Influencers
-        </h1>
-
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Filters Panel */}
-          <aside className="w-full lg:w-1/4 bg-white rounded-lg shadow p-4">
-            <h2 className="text-lg font-semibold mb-3">Filter by Interest</h2>
-            <div className="space-y-2 max-h-80 overflow-y-auto">
-              {interestOptions.map((opt) => (
-                <label
-                  key={opt._id}
-                  className="flex items-center space-x-2 text-sm"
-                >
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 text-indigo-600"
-                    checked={selectedInterests.has(opt._id)}
-                    onChange={() => toggleInterest(opt._id)}
-                  />
-                  <span className="text-gray-700">{opt.name}</span>
-                </label>
-              ))}
-            </div>
+    <div className="min-h-full flex">
+      <aside className="w-72 bg-white border-r p-6 hidden md:flex flex-col h-screen overflow-y-auto border-l">
+        <h2 className="text-xl font-semibold mb-6">
+          Filter Influencers
+        </h2>
+        <div className="flex-1">
+          {/* Category Section */}
+          <div className="mb-4">
             <button
-              className="mt-4 text-sm text-indigo-600 hover:underline"
-              onClick={() => setSelectedInterests(new Set())}
+              onClick={() => toggleSection("category")}
+              className="flex w-full justify-between items-center py-2 text-gray-700 font-medium border-b"
             >
-              Clear All
+              <span>Category</span>
+              {openSections.category ? (
+                <HiChevronUp />
+              ) : (
+                <HiChevronDown />
+              )}
             </button>
-          </aside>
-
-          {/* Influencers Grid */}
-          <section className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.length === 0 ? (
-              <p className="col-span-full text-center text-gray-600">
-                No influencers match the selected interests.
-              </p>
-            ) : (
-              filtered.map((inf) => (
-                <div
-                  key={inf._id}
-                  className="bg-white rounded-lg shadow hover:shadow-lg transition p-4 flex flex-col"
-                >
-                  <img
-                    src={inf.avatarUrl || "/default-avatar.png"}
-                    alt={inf.name}
-                    className="h-32 w-32 rounded-full object-cover mx-auto"
-                  />
-                  <h3 className="mt-4 text-lg font-semibold text-gray-900 text-center">
-                    {inf.name}
-                  </h3>
-                  {inf.location && (
-                    <p className="text-sm text-gray-500 text-center">
-                      {inf.location}
-                    </p>
-                  )}
-                  {inf.followerCount != null && (
-                    <p className="text-sm text-gray-500 text-center">
-                      {inf.followerCount.toLocaleString()} followers
-                    </p>
-                  )}
-                  <div className="mt-3 flex flex-wrap justify-center gap-1">
-                    {inf.interests.map((id) => {
-                      const opt = interestOptions.find((i) => i._id === id);
-                      return (
-                        <span
-                          key={id}
-                          className="text-xs bg-indigo-100 text-indigo-700 rounded-full px-2 py-1"
-                        >
-                          {opt?.name || id}
-                        </span>
-                      );
-                    })}
-                  </div>
-                  <button className="mt-auto bg-indigo-600 text-white text-sm rounded-md py-2 hover:bg-indigo-700 transition">
-                    View Profile
-                  </button>
-                </div>
-              ))
+            {openSections.category && (
+              <ul className="mt-2 space-y-2">
+                {categories.map((cat) => (
+                  <li
+                    key={cat._id}
+                    className="flex items-center"
+                  >
+                    <Checkbox
+                      id={`cat-${cat._id}`}
+                      checked={tempCategories.includes(
+                        cat._id
+                      )}
+                      onCheckedChange={(checked) => {
+                        setTempCategories((prev) =>
+                          checked
+                            ? [...prev, cat._id]
+                            : prev.filter(
+                              (id) => id !== cat._id
+                            )
+                        );
+                      }}
+                    />
+                    <label
+                      htmlFor={`cat-${cat._id}`}
+                      className="ml-2 text-gray-600"
+                    >
+                      {cat.name}
+                    </label>
+                  </li>
+                ))}
+              </ul>
             )}
-          </section>
+          </div>
+
+          {/* Audience Size Section */}
+          <div className="mb-4">
+            <button
+              onClick={() => toggleSection("audience")}
+              className="flex w-full justify-between items-center py-2 text-gray-700 font-medium border-b"
+            >
+              <span>Audience Size</span>
+              {openSections.audience ? (
+                <HiChevronUp />
+              ) : (
+                <HiChevronDown />
+              )}
+            </button>
+            {openSections.audience && (
+              <div className="mt-2 flex space-x-2">
+                <Input
+                  type="number"
+                  placeholder="Min"
+                  value={tempAudienceSize.min ?? ""}
+                  onChange={(e) =>
+                    setTempAudienceSize((s) => ({
+                      ...s,
+                      min: e.target.value
+                        ? Number(e.target.value)
+                        : undefined,
+                    }))
+                  }
+                  className="w-1/2"
+                />
+                <Input
+                  type="number"
+                  placeholder="Max"
+                  value={tempAudienceSize.max ?? ""}
+                  onChange={(e) =>
+                    setTempAudienceSize((s) => ({
+                      ...s,
+                      max: e.target.value
+                        ? Number(e.target.value)
+                        : undefined,
+                    }))
+                  }
+                  className="w-1/2"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Country Section */}
+          <div className="mb-4">
+            <button
+              onClick={() => toggleSection("country")}
+              className="flex w-full justify-between items-center py-2 text-gray-700 font-medium border-b"
+            >
+              <span>Country</span>
+              {openSections.country ? (
+                <HiChevronUp />
+              ) : (
+                <HiChevronDown />
+              )}
+            </button>
+            {openSections.country && (
+              <div className="mt-2">
+                <Select
+                  value={tempCountry}
+                  onValueChange={setTempCountry}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="All Countries" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      All Countries
+                    </SelectItem>
+                    <SelectItem value="US">
+                      United States
+                    </SelectItem>
+                    <SelectItem value="UK">
+                      United Kingdom
+                    </SelectItem>
+                    <SelectItem value="CA">
+                      Canada
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          {/* Platform Section */}
+          <div className="mb-4">
+            <button
+              onClick={() => toggleSection("platform")}
+              className="flex w-full justify-between items-center py-2 text-gray-700 font-medium border-b"
+            >
+              <span>Platform</span>
+              {openSections.platform ? (
+                <HiChevronUp />
+              ) : (
+                <HiChevronDown />
+              )}
+            </button>
+            {openSections.platform && (
+              <div className="mt-2">
+                <Select
+                  value={tempPlatform}
+                  onValueChange={setTempPlatform}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="All Platforms" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      All Platforms
+                    </SelectItem>
+                    <SelectItem value="Instagram">
+                      Instagram
+                    </SelectItem>
+                    <SelectItem value="YouTube">
+                      YouTube
+                    </SelectItem>
+                    <SelectItem value="TikTok">
+                      TikTok
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          {/* Gender Split Section */}
+          <div className="mb-4">
+            <button
+              onClick={() => toggleSection("gender")}
+              className="flex w-full justify-between items-center py-2 text-gray-700 font-medium border-b"
+            >
+              <span>Gender Split</span>
+              {openSections.gender ? (
+                <HiChevronUp />
+              ) : (
+                <HiChevronDown />
+              )}
+            </button>
+            {openSections.gender && (
+              <div className="mt-2 flex space-x-2">
+                <Input
+                  type="number"
+                  placeholder="Min %"
+                  value={tempGenderRange.min ?? ""}
+                  onChange={(e) =>
+                    setTempGenderRange((g) => ({
+                      ...g,
+                      min: e.target.value
+                        ? Number(e.target.value)
+                        : undefined,
+                    }))
+                  }
+                  className="w-1/2"
+                />
+                <Input
+                  type="number"
+                  placeholder="Max %"
+                  value={tempGenderRange.max ?? ""}
+                  onChange={(e) =>
+                    setTempGenderRange((g) => ({
+                      ...g,
+                      max: e.target.value
+                        ? Number(e.target.value)
+                        : undefined,
+                    }))
+                  }
+                  className="w-1/2"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Age Group Section */}
+          <div className="mb-4">
+            <button
+              onClick={() => toggleSection("age")}
+              className="flex w-full justify-between items-center py-2 text-gray-700 font-medium border-b"
+            >
+              <span>Age Group</span>
+              {openSections.age ? (
+                <HiChevronUp />
+              ) : (
+                <HiChevronDown />
+              )}
+            </button>
+            {openSections.age && (
+              <div className="mt-2">
+                <Select
+                  value={tempAgeGroup}
+                  onValueChange={setTempAgeGroup}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="All Ages" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      All Ages
+                    </SelectItem>
+                    <SelectItem value="18-24">18-24</SelectItem>
+                    <SelectItem value="25-34">25-34</SelectItem>
+                    <SelectItem value="35-44">35-44</SelectItem>
+                    <SelectItem value="45+">45+</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          <Button
+            onClick={applyFilters}
+            className="w-full mt-4 bg-gradient-to-r from-[#FFA135] to-[#FF7236] text-white"
+          >
+            Apply Filters
+          </Button>
         </div>
-      </div>
+      </aside>
+
+      <main className="flex-1 p-6">
+<div className="mb-6 flex items-center">
+  <div className="relative w-full max-w-3xl bg-white rounded-full">
+    <Input
+      placeholder="Search for influencer..."
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      className="
+        w-full
+        pl-6 pr-20
+        h-16
+        text-lg
+        placeholder:text-lg
+        placeholder:text-gray-400
+        rounded-full
+        border border-orange-300
+        border-3
+        focus:outline-none focus:ring-2 focus:ring-orange-400
+      "
+    />
+    <div className="absolute inset-y-0 right-6 flex items-center pointer-events-none">
+      <span className="bg-gradient-to-r from-[#FFA135] to-[#FF7236] text-white p-3 rounded-full shadow">
+        <HiOutlineSearch className="w-6 h-6" />
+      </span>
+    </div>
+  </div>
+</div>
+
+
+        <Table className="border rounded-lg overflow-hidden bg-white">
+          <TableHeader className="bg-gradient-to-r from-[#FFA135] to-[#FF7236] text-white">
+            <TableRow>
+              <TableHead>Influencer Name</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Audience Size</TableHead>
+              <TableHead>Country</TableHead>
+              <TableHead>Platform</TableHead>
+              <TableHead>Gender (M%/ F%)</TableHead>
+              <TableHead>Age Group</TableHead>
+              <TableHead></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.map((inf) => (
+              <TableRow key={inf._id} className="border-b hover:bg-orange-50 height-[108px]">
+                <TableCell className="px-6 py-4">{inf.name}</TableCell>
+                <TableCell>
+                  <Badge>{inf.categoryName || "—"}</Badge>
+                </TableCell>
+                <TableCell>
+                  {inf.audienceSize?.toLocaleString() || "—"}
+                </TableCell>
+                <TableCell>{inf.country || "—"}</TableCell>
+                <TableCell>{inf.platform || "—"}</TableCell>
+                <TableCell>
+                  {inf.malePercentage ?? "—"}% / {inf.femalePercentage ?? "—"}%
+                </TableCell>
+                <TableCell>{inf.audienceAgeGroup || "—"}</TableCell>
+                <TableCell>
+                  <Button onClick={()=> router.push(`/brand/browse-influencers/view?id=${inf.influencerId}`)} className="cursor-pointer bg-gradient-to-r from-[#FFA135] to-[#FF7236] text-white" size="sm" >
+                    View
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </main>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-// File: app/brand/messages/new/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -10,7 +9,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { post } from "@/lib/api";
 
 interface RawInfluencer {
-  _id: string;
   influencerId: string;
   name: string;
 }
@@ -26,22 +24,21 @@ export default function NewChatPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const brandId =
-    typeof window !== "undefined"
-      ? localStorage.getItem("brandId")
-      : null;
 
-  // 1) Fetch raw list, then normalize
+  const brandId =
+    typeof window !== "undefined" ? localStorage.getItem("brandId") : null;
+
   useEffect(() => {
     (async () => {
       try {
+        // adjust to your real endpoint
         const rawList = await post<RawInfluencer[]>("/influencer/getlist");
-        const uiList: Influencer[] = rawList.map((inf) => ({
+        const uiList = rawList.map((inf) => ({
           id: inf.influencerId,
           name: inf.name,
         }));
         setInfluencers(uiList);
-      } catch (err: any) {
+      } catch (err) {
         console.error(err);
         setError("Failed to load influencers.");
       } finally {
@@ -54,7 +51,6 @@ export default function NewChatPage() {
     inf.name.toLowerCase().includes(query.toLowerCase())
   );
 
-  // 2) Create or fetch 1:1 chat room, then navigate
   const startChat = async (influencerId: string) => {
     if (!brandId) return;
     try {
@@ -63,7 +59,7 @@ export default function NewChatPage() {
         influencerId,
       });
       router.replace(`/brand/messages/${roomId}`);
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       setError("Unable to start chat. Please try again.");
     }
@@ -75,9 +71,7 @@ export default function NewChatPage() {
         <Button variant="ghost" onClick={() => router.back()}>
           ← Cancel
         </Button>
-        <h2 className="flex-1 text-lg font-semibold text-center">
-          New Chat
-        </h2>
+        <h2 className="flex-1 text-lg font-semibold text-center">New Chat</h2>
       </div>
 
       <Input

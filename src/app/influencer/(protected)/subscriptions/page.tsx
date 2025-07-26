@@ -7,7 +7,6 @@ import {
   HiXCircle,
   HiCreditCard,
   HiCheck,
-  HiX,
 } from "react-icons/hi";
 
 interface Feature {
@@ -24,14 +23,13 @@ interface Plan {
 
 interface InfluencerData {
   subscription: {
-    planName:string;
+    planName: string;
     expiresAt: string;
   };
 }
 
 type PaymentStatus = "idle" | "processing" | "success" | "failed";
 
-// Helpers
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const prettifyKey = (key: string) =>
   key
@@ -39,7 +37,6 @@ const prettifyKey = (key: string) =>
     .map((k) => capitalize(k))
     .join(" ");
 
-// Dynamically load Razorpay SDK
 function loadScript(src: string): Promise<boolean> {
   return new Promise((res) => {
     const script = document.createElement("script");
@@ -56,20 +53,19 @@ export default function InfluencerSubscriptionPage() {
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
-  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("idle");
+  const [paymentStatus, setPaymentStatus] =
+    useState<PaymentStatus>("idle");
   const [paymentMessage, setPaymentMessage] = useState<string>("");
 
   useEffect(() => {
     (async () => {
       try {
-        // fetch influencer plans
         const { plans: fetched } = await post<{ plans: Plan[] }>(
           "/subscription/list",
           { role: "Influencer" }
         );
         setPlans(fetched);
 
-        // fetch current influencer subscription
         const influencerId = localStorage.getItem("influencerId");
         if (influencerId) {
           const { subscription } = await get<InfluencerData>(
@@ -88,7 +84,6 @@ export default function InfluencerSubscriptionPage() {
     })();
   }, []);
 
-  // Reload 5s after successful update
   useEffect(() => {
     if (paymentStatus === "success") {
       const timer = setTimeout(() => {
@@ -109,7 +104,9 @@ export default function InfluencerSubscriptionPage() {
     );
     if (!sdkLoaded) {
       setPaymentStatus("failed");
-      setPaymentMessage("Payment SDK failed to load. Check your connection.");
+      setPaymentMessage(
+        "Payment SDK failed to load. Check your connection."
+      );
       setProcessing(null);
       return;
     }
@@ -159,14 +156,16 @@ export default function InfluencerSubscriptionPage() {
           }
         },
         prefill: { name: "", email: "", contact: "" },
-        theme: { color: "#db2777" },
+        theme: { color: "#FFBF00" },
       };
 
       const rzp = new (window as any).Razorpay(options);
       rzp.on("payment.failed", (failure: any) => {
         console.error("Payment failure:", failure.error);
         setPaymentStatus("failed");
-        setPaymentMessage(`Payment Failed: ${failure.error.description}`);
+        setPaymentMessage(
+          `Payment Failed: ${failure.error.description}`
+        );
       });
       rzp.open();
     } catch (err) {
@@ -181,30 +180,35 @@ export default function InfluencerSubscriptionPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <HiCreditCard className="animate-spin text-4xl text-pink-600" />
+        <HiCreditCard className="animate-spin text-4xl bg-clip-text text-transparent bg-gradient-to-r from-[#FFBF00] to-[#FFDB58]" />
         <span className="ml-3">Loading plans…</span>
       </div>
     );
   }
 
   return (
-    <section className="py-12 bg-gradient-to-b from-white to-gray-100">
+    <div className="min-h-screen py-12 bg-gray-100">
       <div className="max-w-7xl mx-auto px-6">
         <h2 className="text-4xl font-extrabold text-center text-gray-900 mb-4">
           Choose Your Influencer Plan
         </h2>
+
         {currentPlan && expiresAt && (
           <div className="text-center mb-8">
-            <span className="font-medium text-gray-700">Current plan:</span>{" "}
-            <span className="font-semibold text-pink-600">
+            <span className="font-medium text-gray-700">
+              Current plan:
+            </span>{" "}
+            <span className="font-semibold text-gray-900">
               {capitalize(currentPlan)}
             </span>{" "}
             <span className="text-gray-500">
-              (expires on {new Date(expiresAt).toLocaleDateString()})
+              (expires on{" "}
+              {new Date(expiresAt).toLocaleDateString()})
             </span>
           </div>
         )}
-        {paymentStatus !== "idle" && (
+
+        {/* {paymentStatus !== "idle" && (
           <div
             className={`max-w-md mx-auto mb-6 p-4 rounded-lg text-center flex items-center justify-center space-x-2 ${
               paymentStatus === "success"
@@ -213,37 +217,33 @@ export default function InfluencerSubscriptionPage() {
             }`}
           >
             {paymentStatus === "success" ? (
-              <HiCheckCircle className="text-2xl" />
+              <HiCheckCircle className="text-2xl bg-clip-text text-transparent bg-gradient-to-r from-[#FFBF00] to-[#FFDB58]" />
             ) : (
-              <HiXCircle className="text-2xl" />
+              <HiXCircle className="text-2xl bg-clip-text text-transparent bg-gradient-to-r from-[#FFBF00] to-[#FFDB58]" />
             )}
             <p className="font-medium">{paymentMessage}</p>
           </div>
-        )}
+        )} */}
+
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {plans.map((plan) => {
             const isActive = plan.name === currentPlan;
             const isProcessing = processing === plan.name;
+
             return (
               <div
                 key={plan.planId}
                 className={`relative bg-white rounded-2xl shadow-md overflow-hidden transform transition duration-300 hover:shadow-xl hover:-translate-y-2 ${
-                  plan.name ==="creator" ? "ring-4 ring-pink-500" : ""
+                  plan.featured ? "ring-4 ring-[#FFBF00]" : ""
                 }`}
               >
-                {/* Current badge */}
                 {isActive && (
-                  <div className="absolute top-0 right-0 bg-green-600 text-white text-xs font-semibold py-1 px-2 uppercase flex items-center space-x-1">
-                    <HiCheck className="w-3 h-3" />
+                  <div className="absolute top-0 right-0 flex items-center space-x-1 bg-[#FFBF00] text-white text-xs font-semibold py-1 px-2 uppercase">
+                    <HiCheck className="w-3 h-3 bg-clip-text text-transparent bg-gradient-to-r from-[#FFBF00] to-[#FFDB58]" />
                     <span>Current</span>
                   </div>
                 )}
-                {/* Featured badge */}
-                {plan.name ==="creator" && (
-                  <div className="absolute top-0 left-0 bg-pink-600 text-white text-xs font-semibold py-1 px-3 uppercase">
-                    Best Value
-                  </div>
-                )}
+
                 <div className="p-8 flex flex-col h-full">
                   <h3 className="text-2xl font-semibold text-gray-800 mb-4">
                     {capitalize(plan.name)}
@@ -254,36 +254,41 @@ export default function InfluencerSubscriptionPage() {
                   </p>
                   <ul className="space-y-3 flex-1 mb-8">
                     {plan.features.map((f) => (
-                      <li key={f.key} className="flex items-start">
-                        <HiCheckCircle className="text-pink-500 mt-1 mr-3" />
-                        <span className="text-gray-700">
-                          {prettifyKey(f.key)}: {f.value === Infinity ? "Unlimited" : f.value}
+                      <li
+                        key={f.key}
+                        className="flex items-start text-gray-700"
+                      >
+                        <HiCheckCircle className="w-5 h-5 mt-1 mr-3 bg-clip-text text-[#FFBF00]" />
+                        <span>
+                          {prettifyKey(f.key)}:{" "}
+                          {f.value === Infinity ? "Unlimited" : f.value}
                         </span>
                       </li>
                     ))}
                   </ul>
+
                   <button
                     onClick={() => handleSelect(plan)}
                     disabled={isActive || isProcessing}
-                    className={`w-full py-3 text-lg font-semibold rounded-lg transition focus:outline-none flex items-center justify-center space-x-2 ${
+                    className={`w-full py-3 text-lg font-semibold rounded-lg flex items-center justify-center space-x-2 transition focus:outline-none ${
                       isActive
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-pink-600 hover:bg-pink-700 text-white"
+                        ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                        : "bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800 hover:opacity-90 cursor-pointer"
                     }`}
                   >
                     {isActive ? (
                       <>
-                        <HiCheckCircle />
+                        <HiCheckCircle className="w-5 h-5 text-gray-800" />
                         <span>Current</span>
                       </>
                     ) : isProcessing ? (
                       <>
-                        <HiCreditCard className="animate-spin" />
+                        <HiCreditCard className="animate-spin w-5 h-5 bg-clip-text text-transparent bg-gradient-to-r from-[#FFBF00] to-[#FFDB58]" />
                         <span>Processing…</span>
                       </>
                     ) : (
                       <>
-                        <HiCreditCard />
+                        <HiCreditCard className="w-5 h-5 bg-clip-text text-gray-800" />
                         <span>Select Plan</span>
                       </>
                     )}
@@ -294,6 +299,6 @@ export default function InfluencerSubscriptionPage() {
           })}
         </div>
       </div>
-    </section>
+    </div>
   );
 }

@@ -137,7 +137,7 @@ export default function BrandSubscriptionPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64 bg-white rounded-lg shadow-lg">
-        <HiCreditCard className="animate-spin text-4xl text-pink-600" />
+        <HiCreditCard className="animate-spin text-4xl text-orange-600" />
         <span className="ml-3">Loading plans…</span>
       </div>
     );
@@ -152,7 +152,7 @@ export default function BrandSubscriptionPage() {
         {currentPlan && expiresAt && (
           <div className="text-center mb-8">
             <span className="font-medium text-gray-700">Current plan:</span>{" "}
-            <span className="font-semibold text-pink-600">{capitalize(currentPlan)}</span>{" "}
+            <span className="font-semibold text-orange-600">{capitalize(currentPlan)}</span>{" "}
             <span className="text-gray-500">(expires on {new Date(expiresAt).toLocaleDateString()})</span>
           </div>
         )}
@@ -160,7 +160,7 @@ export default function BrandSubscriptionPage() {
           <div
             className={`max-w-md mx-auto mb-6 p-4 rounded-lg text-center flex items-center justify-center space-x-2
               ${paymentStatus === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`
-          }
+            }
           >
             {paymentStatus === 'success' ? <HiCheck className="text-2xl" /> : <HiX className="text-2xl" />}
             <p>{paymentMessage}</p>
@@ -168,17 +168,17 @@ export default function BrandSubscriptionPage() {
         )}
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {plans.map(plan => {
-            const isActive = plan.name === currentPlan;
+            const isActive = plan.name.toLowerCase() === currentPlan?.toLowerCase();
             const isProcessing = processing === plan.name;
             return (
               <div
                 key={plan.planId}
                 className={
-                  `relative bg-white rounded-2xl shadow-md overflow-hidden transform transition duration-300 hover:shadow-xl hover:-translate-y-2 ${plan.name === "pro" ? "ring-4 ring-pink-500" : ""}`
+                  `relative bg-white rounded-2xl shadow-md overflow-hidden transform transition duration-300 hover:shadow-xl hover:-translate-y-2 ${plan.name === "pro" ? "ring-4 ring-orange-500" : ""}`
                 }
               >
                 {plan.name === "pro" && (
-                  <div className="absolute top-0 left-0 bg-pink-600 text-white text-xs font-semibold py-1 px-3 uppercase">
+                  <div className="absolute top-0 left-0 bg-orange-600 text-white text-xs font-semibold py-1 px-3 uppercase">
                     Best Value
                   </div>
                 )}
@@ -193,7 +193,7 @@ export default function BrandSubscriptionPage() {
                   <ul className="space-y-3 flex-1 mb-8">
                     {plan.features.map(f => (
                       <li key={f.key} className="flex items-start">
-                        <HiCheckCircle className="text-pink-500 mt-1 mr-3" />
+                        <HiCheckCircle className="text-orange-500 mt-1 mr-3" />
                         <span className="text-gray-700">
                           {prettifyKey(f.key)}: {f.value === Infinity ? "Unlimited" : f.value}
                         </span>
@@ -203,8 +203,8 @@ export default function BrandSubscriptionPage() {
                   <button
                     onClick={() => handleSelect(plan)}
                     disabled={isActive || isProcessing}
-                    className={`w-full py-3 text-lg font-semibold rounded-lg transition focus:outline-none flex items-center justify-center space-x-2 ${isActive ? "bg-gray-400 cursor-not-allowed" : "bg-pink-600 hover:bg-pink-700 text-white"}`
-                  }
+                    className={`w-full py-3 text-lg font-semibold rounded-lg transition focus:outline-none flex items-center justify-center space-x-2 ${isActive ? "bg-gray-400 cursor-not-allowed" : "bg-gradient-to-r from-[#FFA135] to-[#FF7236] text-white hover:from-[#FF7236] hover:to-[#FFA135] cursor-pointer"} ${isProcessing ? "opacity-75 cursor-not-allowed" : ""}`
+                    }
                   >
                     {isActive ? (
                       <>
@@ -213,12 +213,10 @@ export default function BrandSubscriptionPage() {
                       </>
                     ) : isProcessing ? (
                       <>
-                        <HiCreditCard className="animate-spin" />
                         <span>Processing…</span>
                       </>
                     ) : (
                       <>
-                        <HiCreditCard />
                         <span>Select Plan</span>
                       </>
                     )}

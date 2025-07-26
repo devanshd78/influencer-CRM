@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   HiOutlinePhotograph,
   HiOutlineCalendar,
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import Swal from "sweetalert2";
 
 interface CampaignData {
   _id: string;
@@ -43,6 +44,7 @@ interface CampaignData {
 }
 
 export default function ViewCampaignPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
   const [campaign, setCampaign] = useState<CampaignData | null>(null);
@@ -55,18 +57,69 @@ export default function ViewCampaignPage() {
       setLoading(false);
       return;
     }
-    (async () => {
-      try {
-        const data = await post<CampaignData>(`/campaign/checkApplied`, { campaignId: id, influencerId: localStorage.getItem('influencerId') });
-        setCampaign(data);
-      } catch (e) {
-        console.error(e);
-        setError("Failed to load campaign details.");
-      } finally {
-        setLoading(false);
-      }
-    })();
+    fetchCampaign();
   }, [id]);
+
+  const fetchCampaign = async () => {
+    try {
+      const data = await post<CampaignData>(`/campaign/checkApplied`, { campaignId: id, influencerId: localStorage.getItem('influencerId') });
+      setCampaign(data);
+    } catch (e) {
+      console.error(e);
+      setError("Failed to load campaign details.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApply = async () => {
+    const influencerId = localStorage.getItem('influencerId');
+
+    if (!influencerId) {
+      return Swal.fire({
+        icon: 'warning',
+        title: 'Not Logged In',
+        text: 'Please log in to apply for this campaign.',
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true
+      });
+    }
+
+    try {
+      const result = await post<{ success: boolean; message: string }>(
+        '/apply/campaign',
+        {
+          campaignId: campaign?.campaignsId,
+          influencerId,
+        }
+      );
+
+      if (result.message === "Application recorded") {
+        await Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: result.message,
+          showConfirmButton: false,
+          timer: 1500,
+          timerProgressBar: true
+        });
+        fetchCampaign();
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (err: any) {
+      console.error(err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.response?.data?.message || 'Failed to apply. Please try again later.',
+        showConfirmButton: false,
+        timer: 1500,
+        timerProgressBar: true
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -87,19 +140,29 @@ export default function ViewCampaignPage() {
   const c = campaign;
 
   return (
-    <div className="min-h-full p-8 bg-gray-50 space-y-8">
-      <header>
+    <div className="min-h-screen p-8 bg-gray-50 text-gray-800 space-y-8">
+      <header className="space-y-1">
         <h1 className="text-3xl font-bold text-gray-800">Campaign Details</h1>
         <p className="mt-1 text-gray-600">
           Detailed view of <span className="font-medium">{c.productOrServiceName}</span>.
         </p>
+
+        {/* single flex container for both Back + Apply/Badge */}
+        <div className="flex justify-end items-center space-x-4 mt-4">
+          <Button
+            onClick={() => router.back()}
+            className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md"
+          >
+            Back
+          </Button>
+        </div>
       </header>
 
       {/* Product Info */}
-      <Card>
+      <Card className="bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-xl">
-            <HiOutlinePhotograph className="h-6 w-6 text-indigo-500" /> Product Info
+            <HiOutlinePhotograph className="h-6 w-6 text-[#FFBF00]" /> Product Info
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -129,19 +192,17 @@ export default function ViewCampaignPage() {
       </Card>
 
       {/* Target Audience */}
-      <Card>
+      <Card className="bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-xl">
-            <HiOutlineCalendar className="h-6 w-6 text-indigo-500" /> Target Audience
+            <HiOutlineCalendar className="h-6 w-6 text-[#FFBF00]" /> Target Audience
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             <div>
               <p className="text-sm font-medium text-gray-600">Age</p>
-              <p className="mt-1 text-gray-800">
-                {c.targetAudience.age.MinAge}–{c.targetAudience.age.MaxAge}
-              </p>
+              <p className="mt-1 text-gray-800">{c.targetAudience.age.MinAge}–{c.targetAudience.age.MaxAge}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-600">Gender</p>
@@ -157,7 +218,7 @@ export default function ViewCampaignPage() {
               <p className="text-sm font-medium text-gray-600">Interests</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {c.interestId.map(i => (
-                  <Badge key={i._id} variant="outline" className="bg-indigo-50 text-indigo-700">
+                  <Badge key={i._id} variant="default" className="text-gray-800 bg-gradient-to-r from-[#FFBF00] to-[#FFDB58]">
                     {i.name}
                   </Badge>
                 ))}
@@ -168,10 +229,10 @@ export default function ViewCampaignPage() {
       </Card>
 
       {/* Campaign Details */}
-      <Card>
+      <Card className="bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-xl">
-            <HiOutlineCurrencyDollar className="h-6 w-6 text-indigo-500" /> Campaign Details
+            <HiOutlineCurrencyDollar className="h-6 w-6 text-[#FFBF00]" /> Campaign Details
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -187,7 +248,7 @@ export default function ViewCampaignPage() {
             <div className="flex items-center gap-3">
               <Tooltip>
                 <TooltipTrigger>
-                  <HiOutlineCalendar className="h-5 w-5 text-gray-500" />
+                  <HiOutlineCalendar className="h-5 w-5 text-[#FFBF00]" />
                 </TooltipTrigger>
                 <TooltipContent>Start Date</TooltipContent>
               </Tooltip>
@@ -196,7 +257,7 @@ export default function ViewCampaignPage() {
             <div className="flex items-center gap-3">
               <Tooltip>
                 <TooltipTrigger>
-                  <HiOutlineCalendar className="h-5 w-5 text-gray-500" />
+                  <HiOutlineCalendar className="h-5 w-5 text-[#FFBF00]" />
                 </TooltipTrigger>
                 <TooltipContent>End Date</TooltipContent>
               </Tooltip>
@@ -207,10 +268,10 @@ export default function ViewCampaignPage() {
       </Card>
 
       {/* Creative Brief & Notes */}
-      <Card>
+      <Card className="bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-xl">
-            <HiOutlineDocument className="h-6 w-6 text-indigo-500" /> Creative Brief & Notes
+            <HiOutlineDocument className="h-6 w-6 text-[#FFBF00]" /> Creative Brief & Notes
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -230,12 +291,10 @@ export default function ViewCampaignPage() {
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 rounded-lg border bg-indigo-50 p-2 hover:bg-indigo-100"
+                    className="flex items-center gap-2 rounded-lg border border-[#FFBF00] bg-white px-2 py-1 hover:bg-gray-50"
                   >
-                    <HiOutlineDocument className="h-5 w-5 text-indigo-600" />
-                    <span className="truncate text-sm font-medium text-indigo-700">
-                      {url.split("/").pop()}
-                    </span>
+                    <HiOutlineDocument className="h-5 w-5 bg-clip-text text-transparent bg-gradient-to-r from-[#FFBF00] to-[#FFDB58]" />
+                    <span className="truncate text-sm font-medium text-gray-800">{url.split("/").pop()}</span>
                   </a>
                 ))}
               </div>

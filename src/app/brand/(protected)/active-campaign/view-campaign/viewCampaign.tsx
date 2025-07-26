@@ -103,18 +103,6 @@ export default function ViewCampaignPage() {
         >
           Back
         </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          className="
-            bg-gradient-to-r from-[#FFA135] to-[#FF7236]
-            text-white
-            hover:from-[#FF7236] hover:to-[#FFA135]
-            shadow-none
-          "
-        >
-          Edit
-        </Button>
       </div>
     </header>
 

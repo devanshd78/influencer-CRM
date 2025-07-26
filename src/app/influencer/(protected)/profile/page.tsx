@@ -87,7 +87,7 @@ export default function InfluencerProfilePage() {
 
   if (loading) return <Loader />;
   if (error) return <Error message={error} />;
-  if (!influencer) return null;  // now TS knows influencer is non-null below
+  if (!influencer) return null;
 
   const { name, email, phone, county, callingcode, subscription } = influencer;
   const formattedExpiry = new Date(subscription.expiresAt).toLocaleDateString(
@@ -106,7 +106,7 @@ export default function InfluencerProfilePage() {
           {!isEditing && (
             <button
               onClick={() => setIsEditing(true)}
-              className="flex items-center bg-[#ef2f5b] text-white px-4 py-2 rounded-lg shadow hover:bg-pink-600 transition"
+              className="flex items-center bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-white px-4 py-2 rounded-lg shadow hover:opacity-90 transition"
             >
               <HiUser className="mr-2" /> Edit Profile
             </button>
@@ -115,13 +115,13 @@ export default function InfluencerProfilePage() {
 
         {/* Name */}
         <div className="flex items-center space-x-4 mb-6">
-          <div className="bg-[#ef2f5b] text-white rounded-full p-3">
+          <div className="bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-white rounded-full p-3">
             <HiUser size={32} />
           </div>
           <div className="flex-1">
             {isEditing ? (
               <input
-                className="w-full text-2xl font-bold border-b-2 border-[#ef2f5b] focus:outline-none"
+                className="w-full text-2xl font-bold border-b-2 border-[#FFBF00] focus:outline-none"
                 value={formState.name ?? name}
                 onChange={(e) =>
                   setFormState({ ...formState, name: e.target.value })
@@ -142,7 +142,7 @@ export default function InfluencerProfilePage() {
               <p className="text-sm text-gray-500">Phone</p>
               {isEditing ? (
                 <input
-                  className="w-full text-gray-700 font-medium border-b-2 border-[#ef2f5b] focus:outline-none"
+                  className="w-full text-gray-700 font-medium border-b-2 border-[#FFBF00] focus:outline-none"
                   value={formState.phone ?? phone}
                   onChange={(e) =>
                     setFormState({ ...formState, phone: e.target.value })
@@ -164,7 +164,7 @@ export default function InfluencerProfilePage() {
               <p className="text-sm text-gray-500">Email</p>
               {isEditing ? (
                 <input
-                  className="w-full text-gray-700 font-medium border-b-2 border-[#ef2f5b] focus:outline-none"
+                  className="w-full text-gray-700 font-medium border-b-2 border-[#FFBF00] focus:outline-none"
                   value={formState.email ?? email}
                   onChange={(e) =>
                     setFormState({ ...formState, email: e.target.value })
@@ -183,7 +183,7 @@ export default function InfluencerProfilePage() {
               <p className="text-sm text-gray-500">Country</p>
               {isEditing ? (
                 <input
-                  className="w-full text-gray-700 font-medium border-b-2 border-[#ef2f5b] focus:outline-none"
+                  className="w-full text-gray-700 font-medium border-b-2 border-[#FFBF00] focus:outline-none"
                   value={formState.county ?? county}
                   onChange={(e) =>
                     setFormState({ ...formState, county: e.target.value })
@@ -227,7 +227,7 @@ export default function InfluencerProfilePage() {
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
-                          className="bg-[#ef2f5b] h-2 rounded-full"
+                          className="bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] h-2 rounded-full"
                           style={{ width: `${pct}%` }}
                         />
                       </div>
@@ -246,23 +246,21 @@ export default function InfluencerProfilePage() {
               <button
                 onClick={() => setIsEditing(false)}
                 className="flex items-center px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
-              >
-                <HiX className="mr-1" /> Cancel
+              > Cancel
               </button>
               <button
                 onClick={saveProfile}
-                className="flex items-center px-4 py-2 bg-[#ef2f5b] text-white rounded-lg hover:bg-pink-600 transition"
-              >
-                <HiCheck className="mr-1" /> Save Changes
+                className="flex items-center px-4 py-2 bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800 rounded-lg hover:opacity-90 transition"
+              >Save Changes
               </button>
             </>
           ) : (
             <>
-              <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+              <button className="px-4 py-2 bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800 rounded-lg hover:bg-blue-600 transition">
                 Upgrade Subscription
               </button>
-              <button className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
-                Cancel Subscription
+              <button className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-red-600 hover:text-white transition">
+                Cancel
               </button>
             </>
           )}

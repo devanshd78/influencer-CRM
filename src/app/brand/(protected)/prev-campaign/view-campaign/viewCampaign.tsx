@@ -8,7 +8,7 @@ import {
   HiOutlineCurrencyDollar,
   HiOutlineDocument,
 } from "react-icons/hi";
-import { post } from "@/lib/api";
+import { get } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import Swal from "sweetalert2";
+import { useRouter } from "next/navigation";
 
 interface CampaignData {
   _id: string;
@@ -39,11 +39,10 @@ interface CampaignData {
   additionalNotes?: string;
   isActive: number;
   createdAt: string;
-  campaignsId: string;
-  isApplied: number;
 }
 
 export default function ViewCampaignPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
   const [campaign, setCampaign] = useState<CampaignData | null>(null);
@@ -58,7 +57,7 @@ export default function ViewCampaignPage() {
     }
     (async () => {
       try {
-        const data = await post<CampaignData>(`/campaign/checkApplied`, { campaignId: id, influencerId: localStorage.getItem('influencerId') });
+        const data = await get<CampaignData>(`/campaign/id?id=${id}`);
         setCampaign(data);
       } catch (e) {
         console.error(e);
@@ -69,36 +68,9 @@ export default function ViewCampaignPage() {
     })();
   }, [id]);
 
-  const handleApply = async () => {
-    const influencerId = localStorage.getItem('influencerId');
-    if (!influencerId) {
-      return Swal.fire({ icon: 'warning', title: 'Not Logged In', text: 'Please log in to apply for this campaign.' });
-    }
-
-    try {
-      // Use our axios-backed helper to send JSON data
-      const result = await post<{ success: boolean; message: string }>(
-        '/apply/campaign',
-        {
-          campaignId: campaign?.campaignsId,
-          influencerId,
-        }
-      );
-
-      if (result.message === "Application recorded") {
-        Swal.fire({ icon: 'success', title: 'Success', text: result.message });
-      } else {
-        throw new Error(result.message);
-      }
-    } catch (err: any) {
-      console.error(err);
-      Swal.fire({ icon: 'error', title: 'Error', text: err.response.data.message || 'Failed to apply. Please try again later.' });
-    }
-  };
-
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-100">
+      <div className="flex h-screen items-center justify-center">
         <div className="animate-pulse rounded-lg bg-gray-200 p-6 text-gray-500">Loading…</div>
       </div>
     );
@@ -106,7 +78,7 @@ export default function ViewCampaignPage() {
 
   if (error || !campaign) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-100">
+      <div className="flex h-screen items-center justify-center">
         <p className="rounded-lg bg-red-100 p-6 text-red-600">{error || "Campaign not found."}</p>
       </div>
     );
@@ -116,38 +88,30 @@ export default function ViewCampaignPage() {
   const interests = c.interestId.map(i => i.name).join(", ");
 
   return (
-    <div className="min-h-full p-8 bg-gray-50 space-y-8">
-      <header>
-        <h1 className="text-3xl font-bold text-gray-800">Campaign Details</h1>
-        <p className="mt-1 text-gray-600">
-          Detailed view of <span className="font-medium">{c.productOrServiceName}</span>.
-        </p>
-{c.isApplied === 1 ? (
-  <div className="flex justify-end">
-    <span
-      className="inline-block px-4 py-2 rounded-md border-2 border-[#ef2f5b] text-[#ef2f5b] bg-white cursor-default"
-    >
-      Already Applied
-    </span>
-  </div>
-) : (
-  <div className="flex justify-end">
-    <Button
-      onClick={handleApply}
-      className="bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-md"
-    >
-      Apply for Work
-    </Button>
-  </div>
-)}
+    <div className="min-h-full p-8 space-y-8">
+<header className="flex items-center justify-between p-4 rounded-md">
+      <h1 className="text-3xl font-bold text-gray-800">
+        Campaign Details
+      </h1>
 
-      </header>
+      <div className="flex items-center space-x-2">
+        <Button
+          size="sm"
+          variant="outline"
+          className="bg-white text-gray-800 hover:bg-gray-100"
+          onClick={() => router.back()}
+        >
+          Back
+        </Button>
+      </div>
+    </header>
+
 
       {/* Product Info */}
-      <Card>
+      <Card className="bg-white">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <HiOutlinePhotograph className="h-6 w-6 text-indigo-500" /> Product Info
+          <CardTitle className="flex items-center gap-2 text-xl font-medium">
+            <HiOutlinePhotograph className="h-6 w-6 text-orange-500" /> Detailed view of <span className="font-">{c.productOrServiceName}</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -177,10 +141,10 @@ export default function ViewCampaignPage() {
       </Card>
 
       {/* Target Audience */}
-      <Card>
+      <Card className="bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-xl">
-            <HiOutlineCalendar className="h-6 w-6 text-indigo-500" /> Target Audience
+            <HiOutlineCalendar className="h-6 w-6 text-orange-500" /> Target Audience
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -205,7 +169,7 @@ export default function ViewCampaignPage() {
               <p className="text-sm font-medium text-gray-600">Interests</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {c.interestId.map(i => (
-                  <Badge key={i._id} variant="outline" className="bg-indigo-50 text-indigo-700">
+                  <Badge key={i._id} variant="outline" className="bg-orange-50 text-orange-700">
                     {i.name}
                   </Badge>
                 ))}
@@ -216,10 +180,10 @@ export default function ViewCampaignPage() {
       </Card>
 
       {/* Campaign Details */}
-      <Card>
+      <Card className="bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-xl">
-            <HiOutlineCurrencyDollar className="h-6 w-6 text-indigo-500" /> Campaign Details
+            <HiOutlineCurrencyDollar className="h-6 w-6 text-orange-500" /> Campaign Details
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -255,10 +219,10 @@ export default function ViewCampaignPage() {
       </Card>
 
       {/* Creative Brief & Notes */}
-      <Card>
+      <Card className="bg-white">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-xl">
-            <HiOutlineDocument className="h-6 w-6 text-indigo-500" /> Creative Brief & Notes
+            <HiOutlineDocument className="h-6 w-6 text-orange-500" /> Creative Brief & Notes
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -278,10 +242,10 @@ export default function ViewCampaignPage() {
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 rounded-lg border bg-indigo-50 p-2 hover:bg-indigo-100"
+                    className="flex items-center gap-2 rounded-lg border bg-orange-50 p-2 hover:bg-orange-100"
                   >
-                    <HiOutlineDocument className="h-5 w-5 text-indigo-600" />
-                    <span className="truncate text-sm font-medium text-indigo-700">
+                    <HiOutlineDocument className="h-5 w-5 text-orange-600" />
+                    <span className="truncate text-sm font-medium text-orange-700">
                       {url.split("/").pop()}
                     </span>
                   </a>

@@ -13,6 +13,8 @@ import {
   HiLogout,
   HiMenu,
   HiX,
+  HiCreditCard,
+  HiPlay,
 } from "react-icons/hi";
 import { SendIcon } from "lucide-react";
 
@@ -24,12 +26,13 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { name: "Dashboard", href: "/brand/dashboard", icon: HiHome },
-  { name: "Create New Campaign", href: "/brand/create-campaign", icon: HiPlusCircle },
+  { name: "Create New Campaign", href: "/brand/add-edit-campaign", icon: HiPlusCircle },
+  { name: "Created Campaign", href: "/brand/created-campaign", icon: HiPlay },
   { name: "Active Campaign", href: "/brand/active-campaign", icon: HiCheckCircle },
   { name: "Previous Campaigns", href: "/brand/prev-campaign", icon: HiClipboardList },
   { name: "Browse Influencers", href: "/brand/browse-influencers", icon: HiUsers },
   { name: "Messages", href: "/brand/messages", icon: SendIcon },
-  { name: "My Subscriptions", href: "/brand/subscriptions", icon: HiClipboardList },
+  { name: "My Subscriptions", href: "/brand/subscriptions", icon: HiCreditCard },
 ];
 
 interface BrandSidebarProps {
@@ -67,8 +70,8 @@ export default function BrandSidebar({ isOpen, onClose }: BrandSidebarProps) {
             <item.icon
               size={20}
               className={`flex-shrink-0 ${isActive
-                  ? "text-white"
-                  : "text-gray-400 group-hover:text-white"
+                ? "text-white"
+                : "text-gray-400 group-hover:text-white"
                 }`}
             />
             {!collapsed && (
@@ -82,8 +85,8 @@ export default function BrandSidebar({ isOpen, onClose }: BrandSidebarProps) {
   const sidebarContent = (
     <div
       className={`
-        flex flex-col h-full bg-white text-gray-800
-        ${collapsed ? "w-16" : "w-64"}
+        flex flex-col h-full bg-white text-gray-800 shadow-lg
+        ${collapsed ? "w-16" : "w-84"}
         transition-width duration-300 ease-in-out
       `}
     >
@@ -100,7 +103,7 @@ export default function BrandSidebar({ isOpen, onClose }: BrandSidebarProps) {
           <img src="/logo.png" alt="Collabglam logo" className="h-10 w-auto" />
           {!collapsed && (
             <span className="text-2xl font-semibold text-gray-900">
-              CollabGlam
+              CollabGlam Brand
             </span>
           )}
         </Link>

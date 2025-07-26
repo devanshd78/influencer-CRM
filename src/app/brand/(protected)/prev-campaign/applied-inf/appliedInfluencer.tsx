@@ -328,7 +328,7 @@ export default function AppliedInfluencersPage() {
               <p>Applied</p>
             )}
           </TableCell>
-          <TableCell className="flex space-x-2 justify-center">
+          {/* <TableCell className="flex space-x-2 justify-center">
             <Button
               size="sm"
               variant="outline"
@@ -365,7 +365,7 @@ export default function AppliedInfluencersPage() {
                 Add Milestone
               </Button>
             )}
-          </TableCell>
+          </TableCell> */}
         </TableRow>
       )),
     [influencers, isAccepted, isContracted]
@@ -459,7 +459,7 @@ export default function AppliedInfluencersPage() {
                   className="cursor-pointer select-none">
                   Status
                 </TableHead>
-                <TableHead className="text-center">Actions</TableHead>
+                {/* <TableHead className="text-center">Actions</TableHead> */}
               </TableRow>
             </TableHeader>
 

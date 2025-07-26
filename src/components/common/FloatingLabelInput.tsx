@@ -63,6 +63,7 @@ export function FloatingLabelInput({
   id,
   label,
   className = "",
+  required,
   ...props
 }: FloatingLabelInputProps) {
   return (
@@ -80,6 +81,7 @@ export function FloatingLabelInput({
         <input
           id={id}
           placeholder=" "
+          required={required}
           {...props}
           className="
             peer block w-full
@@ -108,6 +110,7 @@ export function FloatingLabelInput({
         "
       >
         {label}
+        {required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
     </div>
   );

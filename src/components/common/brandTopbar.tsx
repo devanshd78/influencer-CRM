@@ -11,6 +11,7 @@ import {
   HiX,
 } from "react-icons/hi";
 import { get } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 interface SearchResult {
   id: string;
@@ -24,6 +25,7 @@ export default function BrandTopbar({
 }: {
   onSidebarOpen: () => void;
 }) {
+  const router = useRouter();
   // Profile / subscription state
   const [brandName, setBrandName] = useState("");
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
@@ -127,106 +129,76 @@ export default function BrandTopbar({
 
   return (
     <header className="w-full bg-white shadow-sm relative z-20">
-        <div className="flex items-center justify-end h-16 px-4 border-b border-gray-200">
-          {/* Left: Hamburger + Search */}
-          <div className="flex items-center space-x-4">
+      <div className="flex items-center justify-end h-16 px-4 border-b border-gray-200">
+        {/* Left: Hamburger + Search */}
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={onSidebarOpen}
+            className="md:hidden p-2 rounded-md hover:bg-gray-100 focus:outline-none"
+          >
+            <HiMenu size={24} className="text-gray-600" />
+          </button>
+        </div>
+
+        {/* Right: Wallet, Name, Profile */}
+        <div className="flex items-center space-x-6">
+          {!loading && !error && walletBalance !== null && (
             <button
-              onClick={onSidebarOpen}
-              className="md:hidden p-2 rounded-md hover:bg-gray-100 focus:outline-none"
+              onClick={() => router.push('/brand/milestone-history')}
+              className="flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-md text-md cursor-pointer"
+              title="Wallet balance"
             >
-              <HiMenu size={24} className="text-gray-600" />
-            </button>
-
-            <div className="relative">
-
-              {/* Search results */}
-              {(searchOpen || isDesktop) && searchQuery && (
-                <div className="absolute left-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-md shadow-lg overflow-auto max-h-60 z-30">
-                  {searchLoading ? (
-                    <div className="p-3 text-gray-500 text-sm">Loading…</div>
-                  ) : searchResults.length > 0 ? (
-                    searchResults.map((r) => (
-                      <a
-                        key={r.id}
-                        href={r.url}
-                        className="block px-4 py-2 hover:bg-gray-50"
-                      >
-                        <p className="text-md font-medium text-gray-800">
-                          {r.title}
-                        </p>
-                        {r.subtitle && (
-                          <p className="text-sm text-gray-500">{r.subtitle}</p>
-                        )}
-                      </a>
-                    ))
-                  ) : (
-                    <div className="p-3 text-gray-500 text-md">
-                      No results found
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right: Wallet, Name, Profile */}
-          <div className="flex items-center space-x-6">
-            {!loading && !error && walletBalance !== null && (
-              <button
-                className="flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-md text-md"
-                title="Wallet balance"
-              >
-                <HiCreditCard size={20} className="text-gray-600" />
-                <span className="font-large text-gray-800">
-                  ${walletBalance.toFixed(2)}
-                </span>
-              </button>
-            )}
-
-            {loading ? (
-              <span className="text-gray-500 text-sm">Loading…</span>
-            ) : error ? (
-              <span className="text-red-500 text-sm">{error}</span>
-            ) : (
-              <span className="text-gray-800 font-medium text-lg">
-                {brandName}
+              <HiCreditCard size={20} className="text-gray-600" />
+              <span className="font-large text-gray-800">
+                ${walletBalance.toFixed(2)}
               </span>
-            )}
+            </button>
+          )}
 
-            <div className="relative" ref={menuRef}>
-              <button
-                onClick={() => setMenuOpen((o) => !o)}
-                className="flex items-center space-x-1 p-2 rounded-md hover:bg-gray-100 focus:outline-none"
-              >
-                <HiUserCircle size={24} className="text-gray-600" />
-                <HiChevronDown size={16} className="text-gray-600" />
-              </button>
-              {menuOpen && !loading && !error && (
-                <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-10">
-                  <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="text-md font-semibold text-gray-700">
-                      {brandName}
-                    </p>
-                    <p className="text-sm text-gray-500">{email}</p>
-                    <p className="text-md text-gray-500">
-                      Plan:{" "}
-                      {subscriptionName.charAt(0).toUpperCase() +
-                        subscriptionName.slice(1)}
-                    </p>
-                    <p className="text-md text-gray-500">
-                      Expires: {formattedExpiry}
-                    </p>
-                  </div>
-                  <ul className="py-1">
-                    <li className="px-4 py-2 hover:bg-gray-100 text-md">
-                      <a href="/brand/profile">View Profile</a>
-                    </li>
-                  </ul>
+          {loading ? (
+            <span className="text-gray-500 text-sm">Loading…</span>
+          ) : error ? (
+            <span className="text-red-500 text-sm">{error}</span>
+          ) : (
+            <span className="text-gray-800 font-medium text-lg">
+              {brandName}
+            </span>
+          )}
+
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen((o) => !o)}
+              className="flex items-center space-x-1 p-2 rounded-md hover:bg-gray-100 focus:outline-none"
+            >
+              <HiUserCircle size={24} className="text-gray-600" />
+              <HiChevronDown size={16} className="text-gray-600" />
+            </button>
+            {menuOpen && !loading && !error && (
+              <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                <div className="px-4 py-3 border-b border-gray-100">
+                  <p className="text-md font-semibold text-gray-700">
+                    {brandName}
+                  </p>
+                  <p className="text-sm text-gray-500">{email}</p>
+                  <p className="text-md text-gray-500">
+                    Plan:{" "}
+                    {subscriptionName.charAt(0).toUpperCase() +
+                      subscriptionName.slice(1)}
+                  </p>
+                  <p className="text-md text-gray-500">
+                    Expires: {formattedExpiry}
+                  </p>
                 </div>
-              )}
-            </div>
+                <ul className="py-1">
+                  <li className="px-4 py-2 hover:bg-gray-100 text-md">
+                    <a href="/brand/profile">View Profile</a>
+                  </li>
+                </ul>
+              </div>
+            )}
           </div>
         </div>
+      </div>
     </header>
   );
 }

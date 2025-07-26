@@ -9,10 +9,12 @@ import {
   HiOutlineCurrencyDollar,
   HiSearch,
   HiX,
+  HiOutlineSearch,
 } from "react-icons/hi";
 import { format } from "date-fns";
 import { post } from "@/lib/api";
 import { ArrowRight, PlayCircle } from "lucide-react";
+import { Input } from "@headlessui/react";
 
 interface DashboardData {
   brandName: string;
@@ -195,7 +197,7 @@ export default function BrandDashboardHome() {
                 </div>
               </div>
             )}
-            
+
             {/* Search Wrapper */}
             <div
               className={[
@@ -211,37 +213,30 @@ export default function BrandDashboardHome() {
                 className="relative"
               >
                 {/* Gradient border wrapper */}
-                <div
-                  className="p-[1.5px] rounded-md bg-gradient-to-r"
-                  style={{
-                    backgroundImage: `linear-gradient(to right, ${accentFrom}, ${accentTo})`,
-                  }}
-                >
-                  {/* Inner white field */}
-                  <div className="flex items-center rounded-md bg-white">
-                    <label htmlFor="brand-dashboard-search" className="sr-only">
-                      Search influencers or campaigns
-                    </label>
-                    <input
-                      ref={searchInputRef}
-                      id="brand-dashboard-search"
-                      type="text"
-                      className="flex-1 px-3 py-2 bg-transparent text-sm md:text-base focus:outline-none"
-                      placeholder="Search influencers, campaigns..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                    {/* Submit button w orange gradient + white icon */}
-                    <button
-                      type="submit"
-                      aria-label="Search"
-                      className="m-1 inline-flex items-center justify-center rounded-md px-2 py-2 text-white bg-gradient-to-r from-[#FFA135] to-[#FF7236] hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FFA135]"
-                    >
-                      <HiSearch size={18} />
-                    </button>
+                <div className="relative w-full max-w-3xl bg-white rounded-full">
+                  <Input
+                    placeholder="Search for influencer..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="
+        w-full
+        pl-6 pr-20
+        h-16
+        text-lg
+        placeholder:text-lg
+        placeholder:text-gray-400
+        rounded-full
+        border border-orange-300
+        border-3
+        focus:outline-none focus:ring-2 focus:ring-orange-400
+      "
+                  />
+                  <div className="absolute inset-y-0 right-6 flex items-center pointer-events-none">
+                    <span className="bg-gradient-to-r from-[#FFA135] to-[#FF7236] text-white p-3 rounded-full shadow">
+                      <HiOutlineSearch className="w-6 h-6" />
+                    </span>
                   </div>
                 </div>
-
                 {/* Mobile close button (absolute, outside gradient border) */}
                 {searchOpen && (
                   <button

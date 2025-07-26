@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+html {
+  font-family: system-ui, sans-serif;
+}
+
 :root {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -130,8 +134,14 @@
     outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
   }
 
+  html {
+    letter-spacing: 0.05em;
+    font-size: 112.5%;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    /* letter-spacing: 0.030em; */
   }
 }
