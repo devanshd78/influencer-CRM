@@ -33,11 +33,12 @@ export const get = async <T = any>(url: string, params?: any): Promise<T> => {
 /**
  * Standard POST (JSON or FormData) helper
  */
-export const post = async <T = any>(url: string, data?: any): Promise<T> => {
+export const post = async <T = any>(url: string, data?: any, opts?: { signal?: AbortSignal }): Promise<T> => {
   // allow FormData uploads
   if (data instanceof FormData) {
     const response = await api.post<T>(url, data, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      signal: opts?.signal,
     })
     return response.data
   }

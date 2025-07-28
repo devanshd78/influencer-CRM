@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   HiSearch,
   HiOutlineSearch,
-  HiOutlineEye,
   HiChevronLeft,
   HiChevronRight,
   HiCheck,
@@ -51,6 +50,12 @@ interface InvitationItem {
   };
 }
 
+// Brand search result type (NEW)
+interface BrandSearchResult {
+  brandId: string;
+  name: string;
+}
+
 // API response shapes
 interface CampaignsResponse {
   meta: PaginationMeta;
@@ -63,7 +68,13 @@ interface InvitationItemResponse {
 
 // Toast
 const toast = (opts: { icon: "success" | "error"; title: string; text?: string }) =>
-  Swal.fire({ showConfirmButton: false, timer: 1200, timerProgressBar: true, background: "white", ...opts });
+  Swal.fire({
+    showConfirmButton: false,
+    timer: 1200,
+    timerProgressBar: true,
+    background: "white",
+    ...opts,
+  });
 
 // Pagination component
 const Pagination: React.FC<{ current: number; total: number; onChange: (p: number) => void }> = ({ current, total, onChange }) => (
@@ -97,33 +108,39 @@ function usePaginatedFetch<TRes, TItem>(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchPage = useCallback(async (search?: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const influencerId = typeof window !== 'undefined' ? localStorage.getItem('influencerId') : null;
-      if (!influencerId) throw new Error('No influencer ID found.');
+  const fetchPage = useCallback(
+    async (search?: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const influencerId = typeof window !== 'undefined' ? localStorage.getItem('influencerId') : null;
+        if (!influencerId) throw new Error('No influencer ID found.');
 
-      const payload = payloadFactory(page, search);
-      const result = await post<TRes>(endpoint, payload);
+        const payload = payloadFactory(page, search);
+        const result = await post<TRes>(endpoint, payload);
 
-      if (!result || typeof result !== "object") {
-        setData([]);
-        setMeta({ total: 0, page, limit: 10, totalPages: 1 });
-        return;
+        if (!result || typeof result !== "object") {
+          setData([]);
+          setMeta({ total: 0, page, limit: 10, totalPages: 1 });
+          return;
+        }
+        const items: any = 'campaigns' in result ? (result as any).campaigns : (result as any).data;
+        const paging = (result as any).meta || (result as any).pagination;
+        setData(items as TItem[]);
+        setMeta({ total: paging.total, page: paging.page || page, limit: paging.limit, totalPages: paging.totalPages || paging.pages });
+      } catch (err: any) {
+        setError(err.message || 'Failed to load.');
+      } finally {
+        setLoading(false);
       }
-      const items: any = 'campaigns' in result ? (result as any).campaigns : (result as any).data;
-      const paging = (result as any).meta || (result as any).pagination;
-      setData(items as TItem[]);
-      setMeta({ total: paging.total, page: paging.page || page, limit: paging.limit, totalPages: paging.totalPages || paging.pages });
-    } catch (err: any) {
-      setError(err.message || 'Failed to load.');
-    } finally {
-      setLoading(false);
-    }
-  }, [endpoint, page]);
+    },
+    [endpoint, page]
+  );
 
-  useEffect(() => { fetchPage(); }, [fetchPage]);
+  useEffect(() => {
+    fetchPage();
+  }, [fetchPage]);
+
   return { data, meta, loading, error, setPage, refetch: fetchPage };
 }
 
@@ -132,10 +149,18 @@ const formatDate = (d: string) => new Intl.DateTimeFormat('en-US', { month: 'sho
 const formatCurrency = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
 export default function MyCampaignsPage() {
+  // Campaign list search (existing)
   const [search, setSearch] = useState('');
+
+  // Brand search UI state (the one you asked to update)
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [brandResults, setBrandResults] = useState<BrandSearchResult[]>([]);
+  const [brandNoResults, setBrandNoResults] = useState(false);
+  const [brandLoading, setBrandLoading] = useState(false);
+
   const searchFormRef = useRef<HTMLFormElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const {
     data: invitations,
@@ -161,44 +186,117 @@ export default function MyCampaignsPage() {
     (page, searchTerm) => ({ influencerId: localStorage.getItem('influencerId'), search: searchTerm?.trim(), page, limit: 10 })
   );
 
-  const acceptInvitation = useCallback(async (id: string) => {
-    try {
-      await post('/invitation/accept', { invitationId: id });
-      toast({ icon: 'success', title: 'Invitation accepted!' });
-      reloadInv();
-    } catch (e: any) {
-      toast({ icon: 'error', title: 'Couldn’t accept', text: e.message });
-    }
-  }, [reloadInv]);
+  const acceptInvitation = useCallback(
+    async (id: string) => {
+      try {
+        await post('/invitation/accept', { invitationId: id });
+        toast({ icon: 'success', title: 'Invitation accepted!' });
+        reloadInv();
+      } catch (e: any) {
+        toast({ icon: 'error', title: 'Couldn’t accept', text: e.message });
+      }
+    },
+    [reloadInv]
+  );
 
-  // Debounce search
+  // Debounce campaign table search
   useEffect(() => {
     const t = setTimeout(() => reloadCamp(search), 500);
     return () => clearTimeout(t);
   }, [search, reloadCamp]);
 
-  const handleSearchSubmit = useCallback(
-    (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-      setSearchOpen(false);
-    },
-    []
-  );
+  // === BRAND SEARCH (only changes required) ===
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q) {
+      setBrandResults([]);
+      setBrandNoResults(false);
+      return;
+    }
+
+    setBrandLoading(true);
+    setBrandNoResults(false);
+
+    const handler = setTimeout(async () => {
+      try {
+        const influencerId = typeof window !== 'undefined' ? localStorage.getItem('influencerId') : null;
+        if (!influencerId) {
+          setBrandResults([]);
+          setBrandNoResults(true);
+          setBrandLoading(false);
+          return;
+        }
+
+        // Endpoint can be adjusted if different; payload HAS: search, influencerId; result HAS: brandId, name
+        const resp = await post<{ results?: BrandSearchResult[]; message?: string }>(
+          '/influencer/searchBrand',
+          { search: q, influencerId }
+        );
+
+        if (resp?.message === 'No result found' || !resp?.results?.length) {
+          setBrandResults([]);
+          setBrandNoResults(true);
+        } else {
+          setBrandResults(resp.results ?? []);
+          setBrandNoResults(false);
+        }
+      } catch {
+        setBrandResults([]);
+        setBrandNoResults(true);
+      } finally {
+        setBrandLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Focus input when opening search in mobile
+  useEffect(() => {
+    if (searchOpen && searchInputRef.current) {
+      const id = requestAnimationFrame(() => searchInputRef.current?.focus());
+      return () => cancelAnimationFrame(id);
+    }
+  }, [searchOpen]);
+
+  // Close on outside click (mobile overlay)
+  useEffect(() => {
+    if (!searchOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (searchFormRef.current && !searchFormRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [searchOpen]);
+
+  // Close on ESC
+  useEffect(() => {
+    if (!searchOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setSearchOpen(false);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [searchOpen]);
+
+  const handleSearchSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSearchOpen(false);
+  }, []);
 
   return (
     <div className="p-6 bg-[#F5E1A4]/5 min-h-screen space-y-8">
-      {/* Search form */}
+      {/* Brand Search form */}
       <div
         className={[
           "w-full md:w-1/3 mx-auto",
-          searchOpen
-            ? "fixed inset-x-0 top-0 z-50 px-4 md:static md:px-0"
-            : "hidden md:block",
+          searchOpen ? "fixed inset-x-0 top-0 z-50 px-4 md:static md:px-0" : "hidden md:block",
         ].join(" ")}
       >
         <form ref={searchFormRef} onSubmit={handleSearchSubmit} className="relative">
           <div className="relative w-full max-w-3xl bg-white rounded-full">
             <Input
+              ref={searchInputRef}
               placeholder="Search for Brand..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -206,19 +304,46 @@ export default function MyCampaignsPage() {
             />
             <div className="absolute inset-y-0 right-6 flex items-center pointer-events-none">
               <span className="bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-white p-3 rounded-full shadow">
-                <HiOutlineSearch className="w-6 h-6" />
+                {brandLoading ? (
+                  <div className="animate-spin h-4 w-4 border-2 border-white rounded-full border-t-transparent" />
+                ) : (
+                  <HiOutlineSearch className="w-6 h-6" />
+                )}
               </span>
             </div>
+            {searchOpen && (
+              <button
+                type="button"
+                aria-label="Close search"
+                onClick={() => setSearchOpen(false)}
+                className="absolute -top-2 -right-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white shadow md:hidden"
+              >
+                <HiX size={16} className="text-gray-600" />
+              </button>
+            )}
           </div>
-          {searchOpen && (
-            <button
-              type="button"
-              aria-label="Close search"
-              onClick={() => setSearchOpen(false)}
-              className="absolute -top-2 -right-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white shadow md:hidden"
-            >
-              <HiX size={16} className="text-gray-600" />
-            </button>
+
+          {(brandResults.length > 0 || brandNoResults) && (
+            <ul className="absolute mt-2 w-full max-w-3xl bg-white rounded-lg shadow-lg z-40 overflow-auto max-h-60">
+              {brandResults.map((res) => (
+                <li
+                  key={res.brandId}
+                  className="px-4 py-3 hover:bg-gray-100 cursor-pointer"
+                  onClick={() => {
+                    // navigate or do something with brandId
+                    // Example:
+                    window.location.href = `/brand/profile?id=${res.brandId}`;
+                    setSearchOpen(false);
+                  }}
+                >
+                  {res.name}
+                </li>
+              ))}
+
+              {brandNoResults && !brandLoading && (
+                <li className="px-4 py-3 text-gray-500 select-none">No result found</li>
+              )}
+            </ul>
           )}
         </form>
       </div>
