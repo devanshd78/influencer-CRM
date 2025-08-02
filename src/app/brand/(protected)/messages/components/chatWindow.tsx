@@ -24,7 +24,7 @@ type Message = {
   replyTo?: { text: string; idx: number } | null;
 };
 
-const CHAR_LIMIT = 200;
+const CHAR_LIMIT = 2000;
 const SCROLL_THRESHOLD = 50;
 
 const msgKey = (m: Pick<Message, "senderId" | "timestamp" | "text" | "messageId">) =>
@@ -131,10 +131,10 @@ export default function ChatWindow({ params }: { params: { roomId: string } }) {
   // websocket ------------------------------------------------
 
   useEffect(() => {
-    if (wsMadeRef.current) return; // dev StrictMode guard
+    if (wsMadeRef.current) return;
     wsMadeRef.current = true;
 
-    const url = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:5000/ws";
+    const url = process.env.NEXT_PUBLIC_WS_URL || "ws://infuencer.onrender.com/ws";
     const ws = new WebSocket(url);
     wsRef.current = ws;
 
@@ -158,7 +158,8 @@ export default function ChatWindow({ params }: { params: { roomId: string } }) {
       }
     };
 
-    ws.onerror = () => setError("WebSocket error");
+    ws.onerror = () => {console.log(error);
+     setError("WebSocket error");}
 
     return () => ws.close();
   }, [roomId, upsertMessage, scrollToBottom]);
