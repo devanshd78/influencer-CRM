@@ -38,12 +38,16 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";          // already present above
+import { Label } from "@/components/ui/label";
+const ReactSelect = dynamic(() => import("react-select"), { ssr: false });
 
 // === Helpers ===
 interface Option {
   value: string;
   label: string;
 }
+
 interface Country {
   _id: string;
   countryName: string;
@@ -58,7 +62,7 @@ interface CountryOption {
 }
 function buildCountryOptions(countries: Country[]): CountryOption[] {
   return countries.map((c) => ({
-    value: c.countryCode,
+    value: c._id,
     label: `${c.flag} ${c.countryName}`,
     country: c,
   }));
@@ -111,14 +115,13 @@ export default function BrowseInfluencersPage() {
   const [ageOptions, setAgeOptions] = useState<Option[]>([]);
 
   const [tempCategories, setTempCategories] = useState<string[]>([]);
-  const [tempCountry, setTempCountry] = useState<string>("all");
   const [tempPlatform, setTempPlatform] = useState<string>("all");
   const [tempAgeGroup, setTempAgeGroup] = useState<string>("all");
   const [tempAudienceSize, setTempAudienceSize] = useState<string>("all");
-  const [tempGenderBifurcation, setTempGenderBifurcation] = useState<{
-    maleMin?: number;
-    femaleMin?: number;
-  }>({});
+  const [tempCountries, setTempCountries] = useState<CountryOption[]>([]);
+  const [tempMaleSplit, setTempMaleSplit] = useState<string>("all");
+  const [tempFemaleSplit, setTempFemaleSplit] = useState<string>("all");
+
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Collapsible sections
@@ -149,7 +152,6 @@ export default function BrowseInfluencersPage() {
       /* ignore */
     });
     get<Country[]>("/country/getall").then(setCountries).catch(() => {
-      /* ignore */
     });
     get<{ _id: string; name: string; platformId: string }[]>(
       "/platform/getall"
@@ -190,14 +192,20 @@ export default function BrowseInfluencersPage() {
 
     if (searchQuery.trim()) body.search = searchQuery.trim();
     if (tempCategories.length) body.categories = tempCategories;
-    if (tempCountry !== "all") body.countryId = tempCountry;
+    if (tempCountries.length) body.countryId = tempCountries.map((c) => c.value);
     if (tempPlatform !== "all") body.platformId = tempPlatform;
     if (tempAgeGroup !== "all") body.ageGroup = tempAgeGroup;
     if (tempAudienceSize !== "all") body.audienceRange = tempAudienceSize;
-
-    const { maleMin, femaleMin } = tempGenderBifurcation;
-    if (typeof maleMin === "number") body.malePercentageMin = maleMin;
-    if (typeof femaleMin === "number") body.femalePercentageMin = femaleMin;
+    if (tempMaleSplit !== "all") {
+      const [minM, maxM] = tempMaleSplit.split("-").map((v) => Number(v));
+      body.malePercentageMin = minM;
+      body.malePercentageMax = maxM;
+    }
+    if (tempFemaleSplit !== "all") {
+      const [minF, maxF] = tempFemaleSplit.split("-").map((v) => Number(v));
+      body.femalePercentageMin = minF;
+      body.femalePercentageMax = maxF;
+    }
 
     post<{ success: boolean; count: number; data: Influencer[] }>(
       "/filters/getlist",
@@ -205,6 +213,8 @@ export default function BrowseInfluencersPage() {
     )
       .then((res) => {
         setInfluencers(res.data);
+        console.log(res.data);
+
         const pages = Math.ceil(res.count / pageSize) || 1;
         setTotalPages(pages);
       })
@@ -214,11 +224,12 @@ export default function BrowseInfluencersPage() {
     currentPage,
     searchQuery,
     tempCategories,
-    tempCountry,
+    tempCountries,
     tempPlatform,
     tempAgeGroup,
     tempAudienceSize,
-    tempGenderBifurcation,
+    tempMaleSplit,
+    tempFemaleSplit
   ]);
 
   useEffect(() => {
@@ -310,19 +321,16 @@ export default function BrowseInfluencersPage() {
             {openSections.country ? <HiChevronUp /> : <HiChevronDown />}
           </button>
           {openSections.country && (
-            <Select value={tempCountry} onValueChange={setTempCountry}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="All Countries" />
-              </SelectTrigger>
-              <SelectContent className="bg-white">
-                <SelectItem value="all">All Countries</SelectItem>
-                {countryOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ReactSelect
+              isMulti
+              options={countryOptions}
+              value={tempCountries}
+              placeholder="All Countries"
+              onChange={(v) => setTempCountries(v as CountryOption[])}
+              className="react-select-container"
+              classNamePrefix="react-select"
+            />
+
           )}
         </div>
 
@@ -362,31 +370,34 @@ export default function BrowseInfluencersPage() {
             {openSections.gender ? <HiChevronUp /> : <HiChevronDown />}
           </button>
           {openSections.gender && (
-            <div className="mt-2 space-y-2">
-              <Input
-                type="number"
-                placeholder="Min male %"
-                className="w-full"
-                value={tempGenderBifurcation.maleMin ?? ""}
-                onChange={(e) =>
-                  setTempGenderBifurcation((b) => ({
-                    ...b,
-                    maleMin: e.target.value ? Number(e.target.value) : undefined,
-                  }))
-                }
-              />
-              <Input
-                type="number"
-                placeholder="Min female %"
-                className="w-full"
-                value={tempGenderBifurcation.femaleMin ?? ""}
-                onChange={(e) =>
-                  setTempGenderBifurcation((b) => ({
-                    ...b,
-                    femaleMin: e.target.value ? Number(e.target.value) : undefined,
-                  }))
-                }
-              />
+            <div className="space-y-4">
+              {/* Male % Split */}
+              <Label className="text-sm font-medium">Male % Split</Label>
+              <Select value={tempMaleSplit} onValueChange={setTempMaleSplit}>
+                <SelectTrigger className="w-full"><SelectValue placeholder="All" /></SelectTrigger>
+                <SelectContent className="bg-white">
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="0-10">0–10%</SelectItem>
+                  <SelectItem value="10-25">10–25%</SelectItem>
+                  <SelectItem value="25-50">25–50%</SelectItem>
+                  <SelectItem value="50-75">50–75%</SelectItem>
+                  <SelectItem value="75-100">75–100%</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Female % Split */}
+              <Label className="text-sm font-medium">Female % Split</Label>
+              <Select value={tempFemaleSplit} onValueChange={setTempFemaleSplit}>
+                <SelectTrigger className="w-full"><SelectValue placeholder="All" /></SelectTrigger>
+                <SelectContent className="bg-white">
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="0-10">0–10%</SelectItem>
+                  <SelectItem value="10-25">10–25%</SelectItem>
+                  <SelectItem value="25-50">25–50%</SelectItem>
+                  <SelectItem value="50-75">50–75%</SelectItem>
+                  <SelectItem value="75-100">75–100%</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
         </div>
@@ -514,23 +525,31 @@ export default function BrowseInfluencersPage() {
                     <TableCell>{inf.county}</TableCell>
                     <TableCell>{inf.platformName}</TableCell>
                     <TableCell>
-                      {inf.audienceBifurcation.malePercentage}% / {" "}
-                      {inf.audienceBifurcation.femalePercentage}%
+                      {inf.audienceBifurcation?.malePercentage}% / {" "}
+                      {inf.audienceBifurcation?.femalePercentage}%
                     </TableCell>
                     <TableCell>{inf.audienceAgeRange}</TableCell>
-                    <TableCell>
+                    <TableCell className="space-x-2">
                       <Button
                         size="sm"
                         onClick={() =>
-                          router.push(
-                            `/brand/browse-influencers/view?id=${inf.influencerId}`
-                          )
+                          router.push(`/brand/browse-influencers/view?id=${inf.influencerId}`)
                         }
                         className="bg-gradient-to-r from-[#FFA135] to-[#FF7236] text-white"
                       >
                         View
                       </Button>
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          router.push(`/brand/messages/new?to=${inf.influencerId}`)
+                        }
+                        className="bg-gradient-to-r from-[#FFA135] to-[#FF7236] text-white"
+                      >
+                        Message
+                      </Button>
                     </TableCell>
+
                   </TableRow>
                 ))
               ) : (

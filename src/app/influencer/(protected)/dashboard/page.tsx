@@ -162,6 +162,37 @@ export default function MyCampaignsPage() {
   const searchFormRef = useRef<HTMLFormElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
+  const [activeCount, setActiveCount] = useState<number>(0);
+  const [pendingCount, setPendingCount] = useState<number>(0);
+  const [totalEarningsPaid, setTotalEarningsPaid] = useState<string>("$0.00");
+  const [upcomingPayouts, setUpcomingPayouts] = useState<string>("$0.00");
+
+  useEffect(() => {
+    const influencerId =
+      typeof window !== "undefined"
+        ? localStorage.getItem("influencerId")
+        : null;
+    if (!influencerId) return;
+
+    post<{
+      influencerId: string;
+      activeCampaigns: number;
+      pendingApprovals: number;
+      totalEarnings: string;
+      upcomingPayouts: string;
+    }>("/dash/influencer", { influencerId })
+      .then((res) => {
+        setActiveCount(res.activeCampaigns);
+        setPendingCount(res.pendingApprovals);
+        setTotalEarningsPaid(res.totalEarnings);
+        setUpcomingPayouts(res.upcomingPayouts);
+      })
+      .catch((err) => {
+        console.error("Failed to load dashboard stats:", err);
+      });
+  }, []);
+
+
   const {
     data: invitations,
     meta: invMeta,
@@ -349,23 +380,39 @@ export default function MyCampaignsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 my-8 px-4 md:px-0">
         <div className="bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] p-[1px] rounded-lg shadow">
           <div className="bg-white p-4 rounded-lg">
-            <h3 className="text-sm text-gray-500">Total Campaigns</h3>
-            <p className="text-3xl font-bold">24</p>
+            <h3 className="text-sm text-gray-500">Active Campaigns</h3>
+            <p className="text-3xl font-bold">{activeCount}</p>
           </div>
         </div>
+
         <div className="bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] p-[1px] rounded-lg shadow">
-          <div className="bg-white p-4 rounded-lg">
-            <h3 className="text-sm text-gray-500">Total Earnings</h3>
-            <p className="text-3xl font-bold">$12,450</p>
+          <div className="bg-white p-4 rounded-lg flex items-center justify-between">
+            <div>
+              <h3 className="text-sm text-gray-500">Pending Approvals</h3>
+              <p className="text-3xl font-bold">{pendingCount}</p>
+            </div>
+            {pendingCount > 0 && (
+              <span className="inline-block bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs font-semibold">
+                {pendingCount}
+              </span>
+            )}
           </div>
         </div>
+
         <div className="bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] p-[1px] rounded-lg shadow">
           <div className="bg-white p-4 rounded-lg">
-            <h3 className="text-sm text-gray-500">New Messages</h3>
-            <p className="text-3xl font-bold">8</p>
+            <h3 className="text-sm text-gray-500">Total Earnings Paid</h3>
+            <p className="text-3xl font-bold">{totalEarningsPaid}</p>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] p-[1px] rounded-lg shadow">
+          <div className="bg-white p-4 rounded-lg">
+            <h3 className="text-sm text-gray-500">Upcoming Payouts</h3>
+            <p className="text-3xl font-bold">{upcomingPayouts}</p>
           </div>
         </div>
       </div>

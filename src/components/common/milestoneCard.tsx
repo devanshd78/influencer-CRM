@@ -4,27 +4,32 @@ import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { post } from "@/lib/api";
 import { motion } from "framer-motion";
+import Swal from "sweetalert2";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface MilestoneEntry {
   milestoneHistoryId: string;
+  milestoneId: string;
   influencerId: string;
   campaignId: string;
   milestoneTitle: string;
   amount: number;
   milestoneDescription?: string;
-  dueDate?: string;
+  createdAt: string;
   status?: string;
+  released?: boolean;
 }
 
 interface MilestoneHistoryCardProps {
+  role: "brand" | "influencer";
+  brandId?: string | null;
   influencerId?: string | null;
-  campaignId?: string | null;
+  campaignId?: string;
   className?: string;
 }
 
-const formatDate = (dateStr?: string) =>
-  (dateStr ? new Date(dateStr) : new Date()).toLocaleDateString("en-US", {
+const formatDate = (dateStr: string) =>
+  new Date(dateStr).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
   });
@@ -36,14 +41,42 @@ const formatCurrency = (amt: number) =>
     minimumFractionDigits: 2,
   });
 
+const palette = {
+  brand: {
+    full: "bg-gradient-to-r from-[#FFA135] to-[#FF7236]",
+    soft: "bg-gradient-to-r from-[#FFA135]/15 to-[#FF7236]/15",
+    line: "bg-gradient-to-b from-[#FFB64C]/50 to-[#FF7236]/50",
+    dot: "bg-gradient-to-r from-[#FFA135] to-[#FF7236]",
+    dotSoft: "bg-gradient-to-r from-[#FFA135]/30 to-[#FF7236]/30",
+    textGrad: "bg-gradient-to-r from-[#FFA135] to-[#FF7236]",
+    text: "text-gray-800",
+  },
+  influencer: {
+    full: "bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800",
+    soft: "bg-gradient-to-r from-[#FFBF00]/15 to-[#FFDB58]/15",
+    line: "bg-gradient-to-b from-[#FFBF00]/50 to-[#FFDB58]/50",
+    dot: "bg-gradient-to-r from-[#FFBF00] to-[#FFDB58]",
+    dotSoft: "bg-gradient-to-r from-[#FFBF00]/30 to-[#FFDB58]/30",
+    textGrad: "bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800",
+    text: "text-gray-800",
+  },
+};
+
+
 // ─── Skeleton Loader ───────────────────────────────────────────────────────────
-const TimelineSkeleton: React.FC<{ rows?: number }> = ({ rows = 3 }) => (
+/* ── Skeleton Loader ──────────────────────────────────────────────── */
+const TimelineSkeleton: React.FC<{ rows?: number; role: "brand" | "influencer" }> = ({
+  rows = 3,
+  role,
+}) => (
   <div className="relative">
-    <span className="absolute left-5 top-6 bottom-0 w-[2px] bg-gradient-to-b from-[#FFB64C]/50 to-[#FF7236]/50" aria-hidden />
+    <span className={`absolute left-5 top-6 bottom-0 w-[2px] ${palette[role].line}`} />
     <ol className="pl-16 space-y-8">
       {Array.from({ length: rows }).map((_, i) => (
         <li key={i} className="relative flex gap-4 items-start">
-          <span className="w-4 h-4 rounded-full bg-gradient-to-r from-[#FFA135]/30 to-[#FF7236]/30 animate-pulse" />
+          <span
+            className={`w-4 h-4 rounded-full ${palette[role].dotSoft} animate-pulse`}
+          />
           <div className="flex-1 space-y-2">
             <div className="h-4 w-44 bg-gray-200 rounded animate-pulse" />
             <div className="h-3 w-24 bg-gray-200 rounded animate-pulse" />
@@ -56,46 +89,52 @@ const TimelineSkeleton: React.FC<{ rows?: number }> = ({ rows = 3 }) => (
   </div>
 );
 
-// ─── Card ──────────────────────────────────────────────────────────────────────
+/* ── Main Card ─────────────────────────────────────────────────────── */
 const MilestoneHistoryCard: React.FC<MilestoneHistoryCardProps> = ({
-  influencerId = null,
-  campaignId = null,
+  role,
+  brandId,
+  influencerId,
+  campaignId,
   className = "",
 }) => {
-  const [brandId, setBrandId] = useState<string | null>(null);
   const [milestones, setMilestones] = useState<MilestoneEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Grab brandId once from localStorage - runs only on mount
-  useEffect(() => {
-    const stored = typeof window !== "undefined" ? localStorage.getItem("brandId") : null;
-    if (stored) setBrandId(stored);
-  }, []);
-
+  /* fetcher */
   const fetchMilestones = async () => {
-    if (!brandId) return;
     setLoading(true);
     setError(null);
 
-    let endpoint = "/milestone/byBrand";
-    const body: Record<string, any> = { brandId };
+    let endpoint = "";
+    const body: Record<string, any> = {};
 
-    if (influencerId && campaignId) {
-      endpoint = "/milestone/getMilestome";
+    /* route logic mirrors original, but uses props */
+    if (role === "brand" && brandId) {
+      body.brandId = brandId;
+      if (campaignId) {
+        endpoint = "/milestone/byCampaign";
+        body.campaignId = campaignId;
+      } else {
+        endpoint = "/milestone/byBrand";
+      }
+    } else if (role === "influencer" && influencerId) {
       body.influencerId = influencerId;
-      body.campaignId = campaignId;
-    } else if (influencerId) {
-      endpoint = "/milestone/byInfluencer";
-      body.influencerId = influencerId;
-    } else if (campaignId) {
-      endpoint = "/milestone/byCampaign";
-      body.campaignId = campaignId;
+      if (campaignId) {
+        endpoint = "/milestone/getMilestome";
+        body.campaignId = campaignId;
+      } else {
+        endpoint = "/milestone/byInfluencer";
+      }
+    } else {
+      setError("Missing required ID for the selected role.");
+      setLoading(false);
+      return;
     }
 
     try {
-      const data = await post<{ milestones: MilestoneEntry[] }>(endpoint, body);
-      setMilestones(data.milestones || []);
+      const res = await post<{ milestones: MilestoneEntry[] }>(endpoint, body);
+      setMilestones(res.milestones);
     } catch (err: any) {
       setError(err.message || "Failed to load milestones");
     } finally {
@@ -103,17 +142,47 @@ const MilestoneHistoryCard: React.FC<MilestoneHistoryCardProps> = ({
     }
   };
 
+  /* release payment */
+  const releaseMilestone = async (m: MilestoneEntry) => {
+    try {
+      await post("/milestone/release", {
+        milestoneHistoryId: m.milestoneHistoryId,
+        milestoneId: m.milestoneId,
+      });
+      Swal.fire({
+        icon: "success",
+        title: "Paid",
+        showConfirmButton: false,
+        timer: 1500,
+        timerProgressBar: true,
+      });
+      fetchMilestones();
+    } catch (err: any) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err.message,
+        showConfirmButton: false,
+        timer: 1500,
+        timerProgressBar: true,
+      });
+    }
+  };
+
   useEffect(() => {
     fetchMilestones();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [brandId, influencerId, campaignId]);
+  }, [brandId, influencerId, campaignId, role]);
 
   return (
     <div
       className={`relative p-6 bg-white/80 backdrop-blur-md border border-gray-100 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 ${className}`}
     >
+      {/* header */}
       <div className="flex items-center gap-3 mb-5">
-        <div className="w-12 h-12 flex items-center justify-center rounded-full bg-gradient-to-r from-[#FFA135] to-[#FF7236] shadow-md">
+        <div
+          className={`w-12 h-12 flex items-center justify-center rounded-full ${palette[role].full} shadow-md`}
+        >
           <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
             <path
               fillRule="evenodd"
@@ -122,33 +191,31 @@ const MilestoneHistoryCard: React.FC<MilestoneHistoryCardProps> = ({
             />
           </svg>
         </div>
-        <h3 className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-[#FFA135] to-[#FF7236]">
+        <h3
+          className={`text-xl font-extrabold bg-clip-text text-transparent ${palette[role].textGrad}`}
+        >
           Milestone Timeline
         </h3>
       </div>
 
-      {/* Validation Errors ---------------------------------------------------- */}
-      {!brandId && (
-        <p className="text-red-600 font-medium">
-          No <code>brandId</code> found in localStorage.
-        </p>
-      )}
+      {/* states */}
+      {loading && <TimelineSkeleton role={role} rows={3} />}
 
-      {/* Loading -------------------------------------------------------------- */}
-      {brandId && loading && <TimelineSkeleton rows={3} />}
-
-      {/* Error ---------------------------------------------------------------- */}
-      {brandId && !loading && error && (
+      {!loading && error && (
         <div className="space-y-3">
           <p className="text-red-600 font-medium">{error}</p>
-          <Button size="sm" variant="outline" className="border-red-400 text-red-600 hover:bg-red-50" onClick={fetchMilestones}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-red-400 text-red-600 hover:bg-red-50"
+            onClick={fetchMilestones}
+          >
             Retry
           </Button>
         </div>
       )}
 
-      {/* Empty ---------------------------------------------------------------- */}
-      {brandId && !loading && !error && milestones.length === 0 && (
+      {!loading && !error && milestones.length === 0 && (
         <div className="space-y-3">
           <p className="text-gray-600 italic">No milestones found.</p>
           <Button size="sm" variant="outline" onClick={fetchMilestones}>
@@ -157,10 +224,10 @@ const MilestoneHistoryCard: React.FC<MilestoneHistoryCardProps> = ({
         </div>
       )}
 
-      {/* Populated ------------------------------------------------------------ */}
-      {brandId && !loading && !error && milestones.length > 0 && (
+      {/* timeline */}
+      {!loading && !error && milestones.length > 0 && (
         <div className="relative">
-          <span className="absolute left-5 top-0 bottom-0 w-[2px] bg-gradient-to-b from-[#FFA135] to-[#FF7236]" aria-hidden />
+          <span className={`absolute left-5 top-0 bottom-0 w-[2px] ${palette[role].line}`} />
           <ol className="pl-16 space-y-8">
             {milestones.map((m, idx) => (
               <motion.li
@@ -170,27 +237,64 @@ const MilestoneHistoryCard: React.FC<MilestoneHistoryCardProps> = ({
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: idx * 0.1, duration: 0.4 }}
               >
-                {/* Marker */}
-                <span className="w-5 h-5 mt-1 rounded-full bg-gradient-to-r from-[#FFA135] to-[#FF7236] shadow-md group-hover:scale-110 transition-transform duration-300" />
-
-                <div className="flex-1 space-y-1 bg-gradient-to-r from-[#FFA135]/15 to-[#FF7236]/15 backdrop-blur-md p-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300">
+                <span
+                  className={`w-5 h-5 mt-1 rounded-full ${palette[role].dot} shadow-md group-hover:scale-110 transition-transform duration-300`}
+                />
+                <div
+                  className={`flex-1 space-y-1 ${palette[role].soft} backdrop-blur-md p-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300`}
+                >
                   <div className="flex justify-between items-center">
-                    <h4 className="text-base font-semibold text-gray-900 group-hover:text-[#FF7236] transition-colors">
+                    <h4
+                      className={`text-base font-semibold text-gray-900 group-hover:${role === "brand" ? "text-[#FF7236]" : "text-[#FFDB58]"
+                        } transition-colors`}
+                    >
                       {m.milestoneTitle}
                     </h4>
-                    <span className="text-base font-bold text-gray-800">
+                    <span className={`text-base font-bold ${palette[role].text}`}>
                       {formatCurrency(m.amount)}
                     </span>
                   </div>
                   <time className="block text-xs text-gray-500 italic">
-                    {formatDate(m.dueDate)}
+                    {formatDate(m.createdAt)}
                   </time>
                   <p className="text-sm text-gray-700 leading-relaxed">
                     {m.milestoneDescription || "–"}
                   </p>
-                  <span className="inline-block px-3 py-0.5 mt-2 text-xs font-semibold rounded-full bg-gradient-to-r from-[#FFA135] to-[#FF7236] text-white">
-                    {(m.status || "Paid").toUpperCase()}
-                  </span>
+
+                  {m.released && role === 'brand' && (
+                    <span
+                      className={`inline-block px-3 py-0.5 text-xs font-semibold rounded-full ${palette[role].full} text-white`}
+                    >
+                      Paid
+                    </span>
+                  )}
+
+                  {m.released && role === 'influencer' && (
+                    <span
+                      className={`inline-block px-3 py-0.5 text-xs font-semibold rounded-full ${palette[role].full} text-gray-800`}
+                    >
+                      Recieved
+                    </span>
+                  )}
+
+                  {!m.released && role === 'influencer' && (
+                    <span
+                      className={`inline-block px-3 py-0.5 text-xs font-semibold rounded-full ${palette[role].full} text-gray-800`}
+                    >
+                      Not Recieved Yet
+                    </span>
+                  )}
+
+                  {!m.released && role === 'brand' && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <Button
+                        className={`${palette[role].full} text-white cursor-pointer`}
+                        onClick={() => releaseMilestone(m)}
+                      >
+                        Release Fund
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </motion.li>
             ))}

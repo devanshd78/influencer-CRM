@@ -59,6 +59,20 @@ interface Meta {
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
+// at top of file
+const toast = (opts: { icon: "success" | "error"; title: string; text?: string }) =>
+  Swal.fire({
+    ...opts,
+    showConfirmButton: false,
+    timer: 1500,
+    timerProgressBar: true,
+    background: "white",
+    customClass: {
+      popup: "rounded-lg border border-gray-200",
+      icon: "bg-gradient-to-r from-[#FFA135] to-[#FF7236] bg-clip-text text-transparent",
+    },
+  });
+
 export default function AppliedInfluencersPage() {
   const searchParams = useSearchParams();
   const campaignId = searchParams.get("id");
@@ -187,11 +201,11 @@ export default function AppliedInfluencersPage() {
         milestoneDescription: milestoneForm.description,
         brandId: localStorage.getItem("brandId"),
       });
-      Swal.fire("Added!", "Milestone has been added.", "success");
+      toast({ icon: "success", title: "Added!", text: "Milestone has been added." });
       setShowMilestoneModal(false);
       fetchApplicants();
     } catch {
-      Swal.fire("Error", "Failed to add milestone.", "error");
+      toast({ icon: "error", title: "Error", text: "Failed to add milestone." });
     }
   };
 
@@ -229,7 +243,7 @@ export default function AppliedInfluencersPage() {
       setPdfUrl(url);
       window.open(url, "_blank");
     } catch (e: any) {
-      Swal.fire("Error", e.message || "Failed to generate preview.", "error");
+      toast({ icon: "error", title: "Error", text: e.message || "Failed to generate preview." });
     }
   };
   const handleSendContract = async () => {
@@ -243,11 +257,11 @@ export default function AppliedInfluencersPage() {
         feeAmount: Number(contractForm.feeAmount),
         type: 1,
       });
-      Swal.fire("Sent!", "Contract sent to influencer.", "success");
+      toast({ icon: "success", title: "Sent!", text: "Contract sent to influencer." });
       setShowContractModal(false);
       fetchApplicants();
     } catch (e: any) {
-      Swal.fire("Error", e.message || "Failed to send contract.", "error");
+      toast({ icon: "error", title: "Error", text: e.message || "Failed to send contract." });
     }
   };
 

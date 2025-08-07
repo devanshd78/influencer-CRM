@@ -471,7 +471,7 @@ function InfluencerLoginForm({ setActiveTab, onForgot }: LoginFormProps) {
           type="button"
           className="
             text-sm
-            bg-gradient-to-r from-[#FFA135] to-[#FF7236]
+            bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800
             bg-clip-text text-transparent
             hover:underline
           "
@@ -484,10 +484,9 @@ function InfluencerLoginForm({ setActiveTab, onForgot }: LoginFormProps) {
         type="submit"
         className="
           w-full
-          bg-gradient-to-r from-[#FFA135] to-[#FF7236]
-          text-white font-bold text-lg
+          bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800 font-semibold text-lg
           transition-all duration-200 transform
-          hover:bg-gradient-to-r hover:from-[#FF8C1A] hover:to-[#FF5C1E]
+          hover:bg-gradient-to-r hover:from-[#FFDB58] hover:to-[#FFBF00]
           hover:scale-105
         "
         disabled={isSubmitting}
@@ -1005,7 +1004,7 @@ function InfluencerSignupForm({ setActiveTab, countries }: SignupProps) {
 
 
 
-    
+
     setIsSubmitting(true);
     try {
       await post("/influencer/register", fd);
@@ -1055,9 +1054,9 @@ function InfluencerSignupForm({ setActiveTab, countries }: SignupProps) {
                 flex items-center justify-center
                 w-8 h-8 rounded-full text-sm font-medium
                 ${active
-                    ? "bg-[#FF7236] text-white"
+                    ? "bg-[#FFBF00] text-white"
                     : completed
-                      ? "bg-[#FFA135] text-white"
+                      ? "bg-[#FFDB58] text-white"
                       : "bg-gray-200 text-gray-600"
                   }
                 ${canToggle ? "cursor-pointer hover:scale-110" : ""}
@@ -1066,7 +1065,7 @@ function InfluencerSignupForm({ setActiveTab, countries }: SignupProps) {
                 {idx + 1}
               </div>
               {idx < steps.length - 1 && (
-                <div className={`flex-1 h-1 ${completed ? "bg-[#FFA135]" : "bg-gray-200"}`} />
+                <div className={`flex-1 h-1 ${completed ? "bg-[#FFDB58]" : "bg-gray-200"}`} />
               )}
             </React.Fragment>
           );
@@ -1087,7 +1086,7 @@ function InfluencerSignupForm({ setActiveTab, countries }: SignupProps) {
 
         <FloatingLabelInput id="infEmail" label="Email" type="email" value={infEmail} onChange={e => setInfEmail(e.target.value)} required />
 
-        <Button onClick={sendOtp} disabled={isSubmitting} className="cursor-pointer w-full bg-gradient-to-r from-[#FFA135] to-[#FF7236] text-white font-bold text-lg transition-all duration-200 transform hover:bg-gradient-to-r hover:from-[#FF8C1A] hover:to-[#FF5C1E] hover:scale-105">
+        <Button onClick={sendOtp} disabled={isSubmitting} className="cursor-pointer w-full bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800 font-semibold text-lg transition-all duration-200 transform hover:scale-105">
           {isSubmitting ? "Sending OTP…" : "Send OTP"}
         </Button>
       </div>
@@ -1102,7 +1101,7 @@ function InfluencerSignupForm({ setActiveTab, countries }: SignupProps) {
 
         <FloatingLabelInput id="infOtp" label="Enter OTP" type="text" value={otp} onChange={e => setOtp(e.target.value)} required />
 
-        <Button onClick={verifyOtp} disabled={isVerifying} className="cursor-pointer w-full bg-gradient-to-r from-[#FFA135] to-[#FF7236] text-white font-bold text-lg transition-all duration-200 transform hover:bg-gradient-to-r hover:from-[#FF8C1A] hover:to-[#FF5C1E] hover:scale-105">
+        <Button onClick={verifyOtp} disabled={isVerifying} className="cursor-pointer w-full bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800 font-semibold text-lg transition-all duration-200 transform hover:scale-105">
           {isVerifying ? "Verifying…" : "Verify OTP"}
         </Button>
       </div>
@@ -1206,7 +1205,7 @@ function InfluencerSignupForm({ setActiveTab, countries }: SignupProps) {
           required
         />
 
-        <Button type="submit" className="cursor-pointer w-full bg-gradient-to-r from-[#FFA135] to-[#FF7236] text-white font-bold text-lg transition-all duration-200 transform hover:bg-gradient-to-r hover:from-[#FF8C1A] hover:to-[#FF5C1E] hover:scale-105">
+        <Button type="submit" className="cursor-pointer w-full bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800 font-semibold text-lg transition-all duration-200 transform hover:scale-105">
           Next
         </Button>
       </form>
@@ -1341,7 +1340,7 @@ function InfluencerSignupForm({ setActiveTab, countries }: SignupProps) {
         />
       </div>
       {/* Submit */}
-      <Button type="submit" disabled={isSubmitting} className="cursor-pointer w-full bg-gradient-to-r from-[#FFA135] to-[#FF7236] text-white font-bold text-lg transition-all duration-200 transform hover:bg-gradient-to-r hover:from-[#FF8C1A] hover:to-[#FF5C1E] hover:scale-105">
+      <Button type="submit" disabled={isSubmitting} className="cursor-pointer w-full bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800 font-semibold text-lg transition-all duration-200 transform hover:scale-105">
         {isSubmitting ? "Signing up…" : "Sign up"}
       </Button>
     </form>
@@ -1367,11 +1366,21 @@ export default function AuthPage() {
   }, []);
 
   const roleBtnClass = useCallback(
-    (current: Role) =>
-      `w-1/2 py-2 text-sm font-medium text-center transition border rounded-md ${role !== current
-        ? "bg-gradient-to-r from-[#FFA135] to-[#FF7236] text-white border-transparent"
-        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-      }`,
+    (current: Role) => {
+      const isSelected = role != current;
+
+      // Use a different gradient when the selected role is "influencer"
+      const selectedGradient =
+        current === "influencer"
+          ? "bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800"
+          : "bg-gradient-to-r from-[#FFA135] to-[#FF7236] text-white";
+
+      return [
+        "w-1/2 py-2 text-sm font-medium text-center transition border rounded-md",
+        isSelected ? selectedGradient : "bg-white",
+        isSelected ? "border-transparent" : "border-gray-300 hover:bg-gray-50",
+      ].join(" ");
+    },
     [role]
   );
 
@@ -1391,6 +1400,16 @@ export default function AuthPage() {
     );
   }, [activeTab, role, countries]);
 
+  const roleGradient = role === "influencer"
+    ? { from: "#FFBF00", to: "#FFDB58" }   // yellow for influencer
+    : { from: "#FFA135", to: "#FF7236" };  // orange for brand
+
+  const gradientClasses =
+    role === "brand"
+      ? "from-[#FF7241]/20 via-[#FFA135]/40 to-white"
+      : "from-[#FFBF00]/20 to-[#FFDB58]/40 to-white";
+
+
   return (
     <>
       <header className="fixed top-0 inset-x-0 bg-white shadow-md py-3 px-6 z-50">
@@ -1406,14 +1425,7 @@ export default function AuthPage() {
       </header>
 
       <div
-        className="
-    min-h-screen flex pt-12
-    bg-gradient-to-r
-      from-[#FF7241]/20
-      via-[#FFA135]/40
-      to-white
-  "
-      >
+        className={`min-h-screen flex pt-12 bg-gradient-to-r ${gradientClasses}`}>
 
         <div className="hidden lg:flex w-1/2 flex-col justify-center items-center px-16 h-screen sticky top-12">
           {role === "brand" ? (
@@ -1466,19 +1478,29 @@ export default function AuthPage() {
               countries={countries}
             />
 
+
             <div className="flex mb-6 rounded-full overflow-hidden border border-gray-200">
-              {(["login", "signup"] as Tab[]).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`flex-1 py-2 text-sm font-medium transition ${activeTab === tab
-                    ? "bg-white bg-clip-text text-transparent bg-gradient-to-r from-[#FFA135] to-[#FF7236]"
-                    : "bg-transparent text-gray-600 hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-[#FFA135] hover:to-[#FF7236]"
-                    }`}
-                >
-                  {tab === "login" ? "Login" : "Sign up"}
-                </button>
-              ))}
+              {(["login", "signup"] as const).map((tab) => {
+                const isActive = activeTab === tab;
+                const { from, to } = roleGradient;
+
+                // Active: clipped-text gradient; Inactive: gray text + gradient on hover
+                const activeClasses = `bg-white bg-clip-text text-transparent bg-gradient-to-r from-[${from}] to-[${to}]`;
+                const inactiveClasses = `bg-transparent text-gray-600 hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-[${from}] hover:to-[${to}]`;
+
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`
+          flex-1 py-2 text-sm font-medium transition
+          ${isActive ? activeClasses : inactiveClasses}
+        `}
+                  >
+                    {tab === "login" ? "Login" : "Sign up"}
+                  </button>
+                );
+              })}
             </div>
 
           </div>

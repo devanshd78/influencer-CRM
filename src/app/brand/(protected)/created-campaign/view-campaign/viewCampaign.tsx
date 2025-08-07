@@ -22,13 +22,14 @@ import { useRouter } from "next/navigation";
 
 interface CampaignData {
   _id: string;
+  campaignsId: string;
   productOrServiceName: string;
   description: string;
   images: string[];
   targetAudience: {
     age: { MinAge: number; MaxAge: number };
     gender: number;
-    location: string;
+    locations: { countryId: string; countryName: string; _id: string }[];
   };
   interestId: { _id: string; name: string }[];
   goal: string;
@@ -89,34 +90,35 @@ export default function ViewCampaignPage() {
 
   return (
     <div className="min-h-full p-8 space-y-8">
-<header className="flex items-center justify-between p-4 rounded-md">
-      <h1 className="text-3xl font-bold text-gray-800">
-        Campaign Details
-      </h1>
+      <header className="flex items-center justify-between p-4 rounded-md">
+        <h1 className="text-3xl font-bold text-gray-800">
+          Campaign Details
+        </h1>
 
-      <div className="flex items-center space-x-2">
-        <Button
-          size="sm"
-          variant="outline"
-          className="bg-white text-gray-800 hover:bg-gray-100"
-          onClick={() => router.back()}
-        >
-          Back
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          className="
+        <div className="flex items-center space-x-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="bg-white text-gray-800 hover:bg-gray-100"
+            onClick={() => router.back()}
+          >
+            Back
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => router.push(`/brand/add-edit-campaign?id=${c.campaignsId}`)}
+            className="
             bg-gradient-to-r from-[#FFA135] to-[#FF7236]
             text-white
             hover:from-[#FF7236] hover:to-[#FFA135]
             shadow-none
           "
-        >
-          Edit
-        </Button>
-      </div>
-    </header>
+          >
+            Edit
+          </Button>
+        </div>
+      </header>
 
 
       {/* Product Info */}
@@ -174,9 +176,16 @@ export default function ViewCampaignPage() {
               </p>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">Location</p>
-              <p className="mt-1 text-gray-800">{c.targetAudience.location}</p>
+              <p className="text-sm font-medium text-gray-600">Locations</p>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {c.targetAudience.locations.map((loc) => (
+                  <Badge key={loc.countryId} variant="outline" className="bg-orange-50 text-orange-700">
+                    {loc.countryName}
+                  </Badge>
+                ))}
+              </div>
             </div>
+
             <div className="md:col-span-3">
               <p className="text-sm font-medium text-gray-600">Interests</p>
               <div className="mt-2 flex flex-wrap gap-2">

@@ -1,7 +1,6 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   HiOutlineSearch,
   HiChevronDown,
@@ -11,12 +10,10 @@ import {
   HiChevronRight,
 } from "react-icons/hi";
 import { get, post } from "@/lib/api";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Select,
+  Select as UiSelect,
   SelectTrigger,
   SelectValue,
   SelectContent,
@@ -38,72 +35,124 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
+import dayjs from "dayjs";
+import ReactSelect from "react-select";
 
-// === Domain Types ===
-interface Campaign {
-  _id: string;
+/* ──────────────────────────────────────────────────────────────────── */
+/* Constants                                                           */
+/* ──────────────────────────────────────────────────────────────────── */
+const GOALS = ["Brand Awareness", "Sales", "Engagement"] as const;
+const BUDGET_MIN = 0;
+const BUDGET_MAX = 100_000;
+const STEP = 1_000;
+
+/* ──────────────────────────────────────────────────────────────────── */
+/* Types                                                               */
+/* ──────────────────────────────────────────────────────────────────── */
+interface UICampaign {
+  id: string;
   campaignId: string;
-  productName: string;
-  description: string;
-  ageRange: string;
-  gender: string;
-  location: string;
-  interests: string[];
+  brand: string;
+  product: string;
   goal: string;
-  budget: string;
-  timeline: string; // e.g. "01-08-25 → 31-08-25"
+  budget: number;
+  gender: number; // 0=female 1=male
+  ageRange: string;
+  locations: string; // "India, Afghanistan"
+  timeline: string;
 }
 
-interface InterestOption {
+interface Country {
   _id: string;
-  name: string;
+  countryName: string;
+  callingCode: string;
+  countryCode: string;
+  flag: string;
 }
+interface CountryOption {
+  value: string; // countryId
+  label: string; // "🇳🇱 Netherlands"
+}
+const buildCountryOptions = (list: Country[]): CountryOption[] =>
+  list.map((c) => ({
+    value: c._id,
+    label: `${c.flag} ${c.countryName}`,
+  }));
 
-// === Main component ===
+/* ──────────────────────────────────────────────────────────────────── */
+/* Helpers                                                             */
+/* ──────────────────────────────────────────────────────────────────── */
+const genderToEnum = (g: string): 0 | 1 | undefined =>
+  g === "female" ? 0 : g === "male" ? 1 : undefined;
+
+const genderLabel = (n: number) => (n === 0 ? "Female" : "Male");
+
+const fmtDate = (d: string) => dayjs(d).format("DD-MMM-YY");
+
+const mapResponse = (raw: any): UICampaign => ({
+  id: raw._id,
+  campaignId: raw.campaignsId,
+  brand: raw.brandName,
+  product: raw.productOrServiceName,
+  goal: raw.goal,
+  budget: raw.budget,
+  gender: raw.targetAudience.gender,
+  ageRange: `${raw.targetAudience.age.MinAge}-${raw.targetAudience.age.MaxAge}`,
+  locations: raw.targetAudience.locations
+    .map((l: any) => l.countryName)
+    .join(", "),
+  timeline: `${fmtDate(raw.timeline.startDate)} → ${fmtDate(
+    raw.timeline.endDate
+  )}`,
+});
+
+/* ──────────────────────────────────────────────────────────────────── */
+/* Component                                                            */
+/* ──────────────────────────────────────────────────────────────────── */
 export default function BrowseCampaignsPage() {
   const router = useRouter();
 
-  // === Pagination ===
+  /* pagination */
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
   const [totalPages, setTotalPages] = useState(1);
 
-  // === Filter & search state ===
-  const [interestOptions, setInterestOptions] = useState<InterestOption[]>([]);
-  const [tempInterests, setTempInterests] = useState<string[]>([]);
-  const [tempGender, setTempGender] = useState<string>("all");
+  /* filters */
+  const [tempGender, setTempGender] = useState("all");
   const [tempAge, setTempAge] = useState<{ min?: number; max?: number }>({});
-  const [tempLocation, setTempLocation] = useState<string>("all");
-  const [tempGoal, setTempGoal] = useState<string>("all");
-  const [tempBudget, setTempBudget] = useState<string>("all");
-  const [tempTimeline, setTempTimeline] = useState<string>("all");
+  const [tempGoal, setTempGoal] = useState("all");
+  const [tempBudgetRange, setTempBudgetRange] = useState<[number, number]>([
+    BUDGET_MIN,
+    BUDGET_MAX,
+  ]);
   const [searchQuery, setSearchQuery] = useState("");
-
-  // Collapsible sections
+  const [selectedCountries, setSelectedCountries] = useState<CountryOption[]>(
+    []
+  );
+  const [countries, setCountries] = useState<CountryOption[]>([]);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    interest: false,
     gender: false,
     age: false,
     location: false,
     goal: false,
     budget: false,
-    timeline: false,
   });
-  const toggleSection = (key: string) =>
-    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  const toggleSection = (s: string) =>
+    setOpenSections((p) => ({ ...p, [s]: !p[s] }));
 
-  // === Data ===
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  /* data */
+  const [campaigns, setCampaigns] = useState<UICampaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // === Load filter option lists ===
+  /* fetch countries once */
   useEffect(() => {
-    get<InterestOption[]>("/interest/getlist").then(setInterestOptions);
-    // Add other lookups: /goal/getall, /location/getall, etc.
+    get<Country[]>("/country/getall")
+      .then((res) => setCountries(buildCountryOptions(res)))
+      .catch(() => setCountries([])); // silent fail
   }, []);
 
-  // === Fetch campaigns with filters, pagination, search ===
+  /* fetch campaigns */
   const fetchCampaigns = useCallback(() => {
     setLoading(true);
     setError(null);
@@ -111,88 +160,55 @@ export default function BrowseCampaignsPage() {
     const body: Record<string, unknown> = {
       page: currentPage,
       limit: pageSize,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+      search: searchQuery.trim() || undefined,
+      gender: genderToEnum(tempGender),
+      minAge: tempAge.min,
+      maxAge: tempAge.max,
+      countryId: selectedCountries.map((c) => c.value),
+      goal: tempGoal !== "all" ? tempGoal : undefined,
+      minBudget: tempBudgetRange[0],
+      maxBudget: tempBudgetRange[1],
     };
 
-    if (searchQuery.trim()) body.search = searchQuery.trim();
-    if (tempInterests.length) body.interests = tempInterests;
-    if (tempGender !== "all") body.gender = tempGender;
-    if (tempLocation !== "all") body.location = tempLocation;
-    if (tempGoal !== "all") body.goal = tempGoal;
-    if (tempBudget !== "all") body.budget = tempBudget;
-    if (tempTimeline !== "all") body.timeline = tempTimeline;
-    if (tempAge.min) body.ageMin = tempAge.min;
-    if (tempAge.max) body.ageMax = tempAge.max;
-
-    post<{ success: boolean; count: number; data: Campaign[] }>(
-      "/campaigns/getlist",
-      body
-    )
+    post<{
+      data: any[];
+      pagination: { totalPages: number };
+    }>("/campaign/filter", body)
       .then((res) => {
-        setCampaigns(res.data);
-        const pages = Math.ceil(res.count / pageSize) || 1;
-        setTotalPages(pages);
+        setCampaigns(res.data.map(mapResponse));
+        setTotalPages(res.pagination.totalPages || 1);
       })
       .catch(() => setError("Unable to load campaigns."))
       .finally(() => setLoading(false));
   }, [
     currentPage,
+    pageSize,
     searchQuery,
-    tempInterests,
     tempGender,
-    tempLocation,
-    tempGoal,
-    tempBudget,
-    tempTimeline,
     tempAge,
+    selectedCountries,
+    tempGoal,
+    tempBudgetRange,
   ]);
 
-  useEffect(() => {
-    fetchCampaigns();
-  }, [fetchCampaigns]);
+  useEffect(fetchCampaigns, [fetchCampaigns]);
 
   const applyFilters = () => {
     setCurrentPage(1);
     fetchCampaigns();
   };
 
-  // === Filter sidebar content ===
+  /* ────────────────────────────────────────────────────────────────── */
+  /* Sidebar (filters)                                                 */
+  /* ────────────────────────────────────────────────────────────────── */
   const filterContent = (
-    <div className="w-full md:w-72 h-screen overflow-y-auto bg-white p-6 flex flex-col border-r">
+    <div className="w-full md:w-72 h-screen overflow-y-auto bg-white p-6 flex flex-col border-l-2 border-r">
       <h2 className="text-xl font-semibold mb-6 text-gray-800">
         Filter Campaigns
       </h2>
       <div className="flex-1 space-y-6 pr-2">
-        {/* Interests */}
-        <div>
-          <button
-            onClick={() => toggleSection("interest")}
-            className="flex w-full justify-between items-center py-2 font-medium border-b"
-          >
-            <span>Interests</span>
-            {openSections.interest ? <HiChevronUp /> : <HiChevronDown />}
-          </button>
-          {openSections.interest && (
-            <ul className="mt-2 space-y-2">
-              {interestOptions.map((opt) => (
-                <li key={opt._id} className="flex items-center">
-                  <Checkbox
-                    id={`int-${opt._id}`}
-                    checked={tempInterests.includes(opt._id)}
-                    onCheckedChange={(c) =>
-                      setTempInterests((prev) =>
-                        c ? [...prev, opt._id] : prev.filter((id) => id !== opt._id)
-                      )
-                    }
-                  />
-                  <label htmlFor={`int-${opt._id}`} className="ml-2">
-                    {opt.name}
-                  </label>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
         {/* Gender */}
         <div>
           <button
@@ -203,7 +219,7 @@ export default function BrowseCampaignsPage() {
             {openSections.gender ? <HiChevronUp /> : <HiChevronDown />}
           </button>
           {openSections.gender && (
-            <Select value={tempGender} onValueChange={setTempGender}>
+            <UiSelect value={tempGender} onValueChange={setTempGender}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="All" />
               </SelectTrigger>
@@ -211,9 +227,8 @@ export default function BrowseCampaignsPage() {
                 <SelectItem value="all">All</SelectItem>
                 <SelectItem value="male">Male</SelectItem>
                 <SelectItem value="female">Female</SelectItem>
-                <SelectItem value="any">Any</SelectItem>
               </SelectContent>
-            </Select>
+            </UiSelect>
           )}
         </div>
 
@@ -257,8 +272,117 @@ export default function BrowseCampaignsPage() {
         </div>
 
         {/* Location */}
-        {/* Repeat for location / goal / budget / timeline with Select or custom pickers */}
+        <div>
+          <button
+            onClick={() => toggleSection("location")}
+            className="flex w-full justify-between items-center py-2 font-medium border-b"
+          >
+            <span>Location</span>
+            {openSections.location ? <HiChevronUp /> : <HiChevronDown />}
+          </button>
+          {openSections.location && (
+            <div className="mt-2">
+              <ReactSelect
+                isMulti
+                options={countries}
+                value={selectedCountries}
+                onChange={(v) => setSelectedCountries(v as CountryOption[])}
+                classNamePrefix="react-select"
+                placeholder="Select countries…"
+              />
+            </div>
+          )}
+        </div>
 
+        {/* Goal */}
+        <div>
+          <button
+            onClick={() => toggleSection("goal")}
+            className="flex w-full justify-between items-center py-2 font-medium border-b"
+          >
+            <span>Goal</span>
+            {openSections.goal ? <HiChevronUp /> : <HiChevronDown />}
+          </button>
+          {openSections.goal && (
+            <UiSelect value={tempGoal} onValueChange={setTempGoal}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="All Goals" />
+              </SelectTrigger>
+              <SelectContent className="bg-white">
+                <SelectItem value="all">All Goals</SelectItem>
+                {GOALS.map((g) => (
+                  <SelectItem key={g} value={g}>
+                    {g}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </UiSelect>
+          )}
+        </div>
+
+        {/* Budget */}
+        <div>
+          <button
+            onClick={() => toggleSection("budget")}
+            className="flex w-full justify-between items-center py-2 font-medium border-b"
+          >
+            <span>
+              Budget (${tempBudgetRange[0].toLocaleString()} – $
+              {tempBudgetRange[1].toLocaleString()})
+            </span>
+            {openSections.budget ? <HiChevronUp /> : <HiChevronDown />}
+          </button>
+
+          {openSections.budget && (
+            <div className="mt-4 space-y-4">
+              {/* Min */}
+              <div>
+                <label className="text-xs text-gray-600">Min</label>
+                <input
+                  type="range"
+                  min={BUDGET_MIN}
+                  max={tempBudgetRange[1]}
+                  step={STEP}
+                  value={tempBudgetRange[0]}
+                  onChange={(e) =>
+                    setTempBudgetRange([
+                      Number(e.target.value),
+                      tempBudgetRange[1],
+                    ])
+                  }
+                  className="w-full h-2 rounded-full appearance-none"
+                  style={{
+                    background: "linear-gradient(to right,#FFBF00,#FFDB58)",
+                  }}
+                />
+              </div>
+
+              {/* Max */}
+              <div>
+                <label className="text-xs text-gray-600">Max</label>
+                <input
+                  type="range"
+                  min={tempBudgetRange[0]}
+                  max={BUDGET_MAX}
+                  step={STEP}
+                  value={tempBudgetRange[1]}
+                  onChange={(e) =>
+                    setTempBudgetRange([
+                      tempBudgetRange[0],
+                      Number(e.target.value),
+                    ])
+                  }
+                  className="w-full h-2 rounded-full appearance-none"
+                  style={{
+                    background: "linear-gradient(to right,#FFBF00,#FFDB58)",
+                  }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Apply */}
         <Button
           onClick={applyFilters}
           className="w-full mt-4 bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800"
@@ -269,7 +393,9 @@ export default function BrowseCampaignsPage() {
     </div>
   );
 
-  // === Main page ===
+  /* ────────────────────────────────────────────────────────────────── */
+  /* Layout                                                            */
+  /* ────────────────────────────────────────────────────────────────── */
   return (
     <div className="flex min-h-screen">
       {/* Sidebar (desktop) */}
@@ -277,7 +403,7 @@ export default function BrowseCampaignsPage() {
         {filterContent}
       </aside>
 
-      {/* Content area (offset for sidebar) */}
+      {/* Content */}
       <div className="flex-1 md:ml-72 flex flex-col">
         {/* Mobile Filters */}
         <div className="md:hidden flex justify-end p-4">
@@ -302,7 +428,7 @@ export default function BrowseCampaignsPage() {
           </Dialog>
         </div>
 
-        {/* Search bar */}
+        {/* Search */}
         <div className="my-6 px-6 flex items-center">
           <div className="relative w-full max-w-3xl bg-white rounded-full">
             <Input
@@ -324,49 +450,50 @@ export default function BrowseCampaignsPage() {
           <Table className="min-w-full border rounded-lg bg-white overflow-x-auto">
             <TableHeader className="bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800 sticky top-0">
               <TableRow>
-                <TableHead>Product</TableHead>
+                <TableHead>Brand</TableHead>
+                <TableHead>Product / Service</TableHead>
                 <TableHead>Goal</TableHead>
                 <TableHead>Budget</TableHead>
                 <TableHead>Gender</TableHead>
                 <TableHead>Age</TableHead>
                 <TableHead>Location</TableHead>
                 <TableHead>Timeline</TableHead>
-                <TableHead></TableHead>
+                <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-4">
+                  <TableCell colSpan={9} className="text-center py-4">
                     Loading campaigns…
                   </TableCell>
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell
-                    colSpan={8}
-                    className="text-center py-4 text-red-600"
-                  >
+                  <TableCell colSpan={9} className="text-center py-4 text-red-600">
                     {error}
                   </TableCell>
                 </TableRow>
-              ) : campaigns.length > 0 ? (
+              ) : campaigns.length ? (
                 campaigns.map((c) => (
-                  <TableRow key={c._id} className="hover:bg-yellow-50">
-                    <TableCell>{c.productName}</TableCell>
+                  <TableRow key={c.id} className="hover:bg-yellow-50">
+                    <TableCell>{c.brand}</TableCell>
+                    <TableCell>{c.product}</TableCell>
                     <TableCell>{c.goal}</TableCell>
-                    <TableCell>{c.budget}</TableCell>
-                    <TableCell>{c.gender}</TableCell>
+                    <TableCell>${c.budget.toLocaleString()}</TableCell>
+                    <TableCell>{genderLabel(c.gender)}</TableCell>
                     <TableCell>{c.ageRange}</TableCell>
-                    <TableCell>{c.location}</TableCell>
+                    <TableCell>{c.locations}</TableCell>
                     <TableCell>{c.timeline}</TableCell>
                     <TableCell>
                       <Button
                         size="sm"
-                        onClick={() =>
-                          router.push(`/brand/browse-campaigns/view?id=${c.campaignId}`)
-                        }
                         className="bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800"
+                        onClick={() =>
+                          router.push(
+                            `/influencer/new-collab/view-campaign?id=${c.campaignId}`
+                          )
+                        }
                       >
                         View
                       </Button>
@@ -375,7 +502,7 @@ export default function BrowseCampaignsPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-4">
+                  <TableCell colSpan={9} className="text-center py-4">
                     No campaigns found
                   </TableCell>
                 </TableRow>
@@ -396,6 +523,9 @@ export default function BrowseCampaignsPage() {
   );
 }
 
+/* ──────────────────────────────────────────────────────────────────── */
+/* Pagination                                                          */
+/* ──────────────────────────────────────────────────────────────────── */
 function Pagination({
   currentPage,
   totalPages,

@@ -6,6 +6,7 @@ import {
   HiOutlineEye,
   HiChevronLeft,
   HiChevronRight,
+  HiOutlineClipboardList,
   HiX,
 } from "react-icons/hi";
 import api, { post } from "@/lib/api";
@@ -13,6 +14,21 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import Swal from "sweetalert2";
+import MilestoneHistoryCard from "@/components/common/milestoneCard";
+
+// ── toast helper ─────────────────────────────────────────────────────
+const toast = (opts: { icon: "success" | "error" | "info"; title: string; text?: string }) =>
+  Swal.fire({
+    ...opts,
+    showConfirmButton: false,
+    timer: 1500,
+    timerProgressBar: true,
+    background: "white",
+    customClass: {
+      popup: "rounded-lg border border-gray-200",
+      icon: "bg-gradient-to-r from-[#FFA135] to-[#FF7236] bg-clip-text text-transparent",
+    },
+  });
 
 /* ── Types ──────────────────────────────────────────────────────────── */
 interface Campaign {
@@ -29,6 +45,7 @@ interface Campaign {
   contractId: string;
   isAccepted: number;
   hasApplied: number;
+  hasMilestone: number;
 }
 
 interface CampaignsResponse {
@@ -68,10 +85,12 @@ export default function MyCampaignsPage() {
   const [hasAccepted, setHasAccepted] = useState(false);
   const [contractId, setContractId] = useState("");
   const [isAccepted, setIsAccepted] = useState(0);
+  const [hasMilestone, setHasMilestone] = useState(0)
 
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [rejectTarget, setRejectTarget] = useState<Campaign | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   const itemsPerPage = 10;
 
@@ -103,6 +122,7 @@ export default function MyCampaignsPage() {
     contractId: raw.contractId,
     isAccepted: raw.isAccepted,
     hasApplied: raw.hasApplied,
+    hasMilestone: raw.hasMilestone
   });
 
   /* ── Fetchers ─────────────────────────────────────────────────────── */
@@ -193,7 +213,7 @@ export default function MyCampaignsPage() {
       setContractId(c.contractId);
       setIsAccepted(c.isAccepted);
     } catch (e: any) {
-      Swal.fire("Error", e.message || "Failed to load contract PDF.", "error");
+      toast({ icon: "error", title: "Error", text: e.message || "Failed to load contract PDF." });
     }
   };
 
@@ -201,13 +221,13 @@ export default function MyCampaignsPage() {
     if (!contractId) return;
     try {
       await post("/contract/accept", { contractId });
-      Swal.fire("Accepted!", "You have accepted the contract.", "success");
+      toast({ icon: "success", title: "Accepted!", text: "You have accepted the contract." });
       setShowPdfModal(false);
       setHasAccepted(false);
       fetchActiveCampaigns();
       fetchAppliedCampaigns();
     } catch (e: any) {
-      Swal.fire("Error", e.message || "Failed to accept contract.", "error");
+      toast({ icon: "error", title: "Error", text: e.message || "Failed to accept contract." });
     }
   };
 
@@ -232,14 +252,14 @@ export default function MyCampaignsPage() {
         reason: rejectReason.trim(),
       });
 
-      Swal.fire("Rejected", "Contract has been rejected.", "info");
+      toast({ icon: "info", title: "Rejected", text: "Contract has been rejected." });
       setShowRejectModal(false);
       // refresh all lists
       fetchActiveCampaigns();
       fetchAppliedCampaigns();
       fetchContractedCampaigns();
     } catch (e: any) {
-      Swal.fire("Error", e.message || "Failed to reject contract.", "error");
+      toast({ icon: "error", title: "Error", text: e.message || "Failed to reject contract." });
     }
   };
 
@@ -273,6 +293,7 @@ export default function MyCampaignsPage() {
     totalPages,
     onPrev,
     onNext,
+    showMilestones = false
   }: {
     data: Campaign[];
     loading: boolean;
@@ -282,7 +303,13 @@ export default function MyCampaignsPage() {
     totalPages: number;
     onPrev: () => void;
     onNext: () => void;
+    showMilestones?: boolean;
   }) => {
+    const [expandedId, setExpandedId] = useState<string | null>(null);
+
+    const influencerId =
+      typeof window !== "undefined" ? localStorage.getItem("influencerId") : null;
+
     /* Skeleton rows */
     const SkeletonRows = () => (
       <tbody>
@@ -307,6 +334,7 @@ export default function MyCampaignsPage() {
             <td className="px-6 py-4 flex justify-center space-x-2">
               <Skeleton className="h-8 w-20 rounded-md" />
               <Skeleton className="h-8 w-8 rounded-full" />
+              <Skeleton className="h-8 w-8 rounded-full" />
             </td>
           </tr>
         ))}
@@ -316,79 +344,125 @@ export default function MyCampaignsPage() {
     /* Real rows */
     const DataRows = () => (
       <tbody>
-        {data.map((c, idx) => (
-          <tr key={c.id} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-            <td className="px-6 py-4">
-              <div className="font-medium text-gray-900">{c.productOrServiceName}</div>
-              <div className="text-gray-600 line-clamp-1">{c.description}</div>
-            </td>{/* */}
-            <td className="px-6 py-4 text-center">{c.brandName}</td>{/* */}
-            <td className="px-6 py-4 text-center">{formatCurrency(c.budget)}</td>{/* */}
-            <td className="px-6 py-4 text-center">
-              {formatDate(c.timeline.startDate)} – {formatDate(c.timeline.endDate)}
-            </td>{/* */}
-            <td className="px-6 py-4 text-center">
-              {c.hasApplied === 1 && !c.isAccepted && !c.isContracted
-                ? (
-                  <Badge className="bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800 shadow-none">
-                    Brand Reviewing
-                  </Badge>
-                )
-                : c.isContracted === 1 && c.isAccepted !== 1
-                  ? (
+        {data.map((c, idx) => {
+          const isExpanded = expandedId === c.id;
+
+          return (
+            <React.Fragment key={c.id}>
+              {/* main campaign row */}
+              <tr className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                <td className="px-6 py-4">
+                  <div className="font-medium text-gray-900">
+                    {c.productOrServiceName}
+                  </div>
+                  <div className="text-gray-600 line-clamp-1">{c.description}</div>
+                </td>
+
+                <td className="px-6 py-4 text-center">{c.brandName}</td>
+                <td className="px-6 py-4 text-center">
+                  {formatCurrency(c.budget)}
+                </td>
+                <td className="px-6 py-4 text-center">
+                  {formatDate(c.timeline.startDate)} –{" "}
+                  {formatDate(c.timeline.endDate)}
+                </td>
+
+                {/* status badge */}
+                <td className="px-6 py-4 text-center">
+                  {c.hasApplied === 1 && !c.isAccepted && !c.isContracted ? (
+                    <Badge className="bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800 shadow-none">
+                      Brand Reviewing
+                    </Badge>
+                  ) : c.isContracted === 1 && c.isAccepted !== 1 ? (
                     <Badge className="bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800 shadow-none">
                       Brand Contracted
                     </Badge>
-                  )
-                  : c.isAccepted === 1
-                    ? (
-                      <Badge className="bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800 shadow-none">
-                        Accepted
-                      </Badge>
-                    )
-                    : null
-              }
-            </td>
-            {/* */}
-            <td className="px-6 py-4 flex justify-center space-x-2 whitespace-nowrap">
-              {c.isAccepted === 1 ? (
-                // Show only View Contract if isAccepted === 1
-                <Button
-                  variant="outline"
-                  className="bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800"
-                  onClick={() => handleViewContract(c)}
-                >
-                  View Contract
-                </Button>
-              ) : c.isContracted === 1 && c.isAccepted !== 1 ? (
-                // Show both View Contract and Reject Contract if contracted and not accepted
-                <>
-                  <Button
-                    variant="outline"
-                    className="bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800"
-                    onClick={() => handleViewContract(c)}
-                  >
-                    View Contract
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                    onClick={() => openRejectModal(c)}
-                  >
-                    Reject Contract
-                  </Button>
-                </>
-              ) : null}
+                  ) : (
+                    <Badge className="bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800 shadow-none">
+                      Accepted
+                    </Badge>
+                  )}
+                </td>
 
-              <Link
-                href={`/influencer/my-campaign/view-campaign?id=${c.id}`}
-                className="p-2 bg-gray-100 text-gray-800 rounded-full hover:bg-gray-200"
-              >
-                <HiOutlineEye size={18} />
-              </Link>
-            </td>
-          </tr>
-        ))}
+                {/* actions */}
+                <td className="px-6 py-4 flex justify-center space-x-2 whitespace-nowrap">
+                  {/* contract buttons (unchanged) */}
+                  {c.hasMilestone === 1 ? (
+                    <Button
+                      variant="outline"
+                      className="bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800"
+                      onClick={() => handleViewContract(c)}
+                    >
+                      View Contract
+                    </Button>
+                  ) : c.isContracted === 1 && c.isAccepted !== 1 ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        className="bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800"
+                        onClick={() => handleViewContract(c)}
+                      >
+                        View Contract
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                        onClick={() => openRejectModal(c)}
+                      >
+                        Reject Contract
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800"
+                      onClick={() => handleViewContract(c)}
+                    >
+                      View Contract
+                    </Button>
+                  )}
+
+                  {/* milestone toggle */}
+                  {showMilestones && (
+                    <button
+                      onClick={() =>
+                        setExpandedId((prev) => (prev === c.id ? null : c.id))
+                      }
+                      className="p-2 bg-gradient-to-r from-[#FFBF00] to-[#FFDB58] text-gray-800 rounded-md hover:brightness-90 transition"
+                    >
+                      <HiOutlineClipboardList
+                        size={18}
+                        className="inline-block mr-1"
+                      />
+                      {isExpanded ? "Hide" : "View"} Milestone
+                    </button>
+                  )}
+
+                  {/* view campaign */}
+                  <Link
+                    href={`/influencer/my-campaign/view-campaign?id=${c.id}`}
+                    className="p-2 bg-gray-100 text-gray-800 rounded-full hover:bg-gray-200"
+                  >
+                    <HiOutlineEye size={18} />
+                  </Link>
+                </td>
+              </tr>
+
+              {/* expandable milestone row */}
+              {isExpanded && (
+                <tr>
+                  <td colSpan={6} className="bg-white px-6 py-6">
+                    <MilestoneHistoryCard
+                      role="influencer"
+                      influencerId={influencerId}
+                      campaignId={c.id}
+                    />
+                  </td>
+                </tr>
+              )}
+            </React.Fragment>
+          );
+        })}
       </tbody>
     );
 
@@ -476,6 +550,7 @@ export default function MyCampaignsPage() {
           totalPages={activeTotalPages}
           onPrev={() => setActivePage((p) => Math.max(p - 1, 1))}
           onNext={() => setActivePage((p) => Math.min(p + 1, activeTotalPages))}
+          showMilestones
         />
       </section>
 
